@@ -3,6 +3,7 @@
 Node.js 的源码分析，基于 v6.0.0.
 
 源码分析包括（libuv, v8）, 需要有一定的 C、C++基础。 Node.js 的源码到处闪烁着开发者的智慧和追求极致的精神。
+包括但不限于：
 
 - 系统架构
 
@@ -20,4 +21,4 @@ Node.js 的源码分析，基于 v6.0.0.
 
 联系作者 @江凌 微博：http://weibo.com/yangjianghua
 
-本书尚在写作中，欢迎讨论https://github.com/yjhjstz/deep-into-node/issues
+本书尚在写作中，欢迎读者讨论https://github.com/yjhjstz/deep-into-node/issues
