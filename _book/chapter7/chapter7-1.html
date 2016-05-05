@@ -53,7 +53,7 @@
         data-chapter-title="Event"
         data-filepath="chapter7/chapter7-1.md"
         data-basepath=".."
-        data-revision="Wed May 04 2016 15:22:53 GMT+0800 (CST)"
+        data-revision="Thu May 05 2016 17:35:32 GMT+0800 (CST)"
         data-innerlanguage="">
     
 
@@ -208,7 +208,7 @@
                         
                             <b>3.</b>
                         
-                        Timer源码解读
+                        Timer 解读
                     </a>
             
             
@@ -223,7 +223,7 @@
                         
                             <b>4.</b>
                         
-                        cluster
+                        Cluster 集群
                     </a>
             
             
@@ -413,9 +413,14 @@
                     <section class="normal" id="section-">
                     
                         <h2 id="event">Event</h2>
+<blockquote>
+<p>Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient.</p>
+</blockquote>
+<p>&#x8FD9;&#x662F;Node.Js&#x5B98;&#x7F51;&#x5BF9;&#x81EA;&#x8EAB;&#x7684;&#x4ECB;&#x7ECD;,&#x660E;&#x786E;&#x5F3A;&#x8C03;&#x4E86;Node.Js&#x4F7F;&#x7528;&#x4E86;&#x4E00;&#x4E2A;&#x4E8B;&#x4EF6;&#x9A71;&#x52A8;&#x3001;&#x975E;&#x963B;&#x585E;&#x5F0F; I/O &#x7684;&#x6A21;&#x578B;,&#x4F7F;&#x5176;&#x8F7B;&#x91CF;&#x53C8;&#x9AD8;&#x6548;&#x3002;</p>
+<p>&#x800C;&#x4E14;&#x5728;Node&#x4E2D;&#x5927;&#x91CF;&#x6838;&#x5FC3;&#x6A21;&#x5757;&#x90FD;&#x4F7F;&#x7528;&#x4E86;Event&#x7684;&#x673A;&#x5236;,&#x56E0;&#x6B64;&#x53EF;&#x4EE5;&#x8BF4;&#x662F;&#x6574;&#x4E2A;Node&#x91CC;&#x6700;&#x91CD;&#x8981;&#x7684;&#x6A21;&#x5757;&#x4E4B;&#x4E00;.</p>
 <h3 id="&#x6D89;&#x53CA;&#x6E90;&#x7801;">&#x6D89;&#x53CA;&#x6E90;&#x7801;</h3>
 <ul>
-<li>lib/events.js</li>
+<li><a href="https://github.com/nodejs/node/blob/v6.0.0/lib/events.js" target="_blank">lib/events.js</a></li>
 </ul>
 <h3 id="&#x89C2;&#x5BDF;&#x8005;&#x6A21;&#x5F0F;">&#x89C2;&#x5BDF;&#x8005;&#x6A21;&#x5F0F;</h3>
 <p><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Observer.svg/854px-Observer.svg.png" alt=""></p>
@@ -424,7 +429,6 @@
 <p>&#x5F53;&#x4E00;&#x4E2A;&#x88AB;&#x89C2;&#x5BDF;&#x8005;&#x9700;&#x8981;&#x5C06;&#x4E00;&#x4E9B;&#x53D8;&#x5316;&#x901A;&#x77E5;&#x7ED9;&#x89C2;&#x5BDF;&#x8005;&#x7684;&#x65F6;&#x5019;&#xFF0C;&#x5B83;&#x5C06;&#x91C7;&#x7528;&#x5E7F;&#x64AD;&#x7684;&#x65B9;&#x5F0F;&#xFF0C;&#x8FD9;&#x6761;&#x5E7F;&#x64AD;&#x53EF;&#x80FD;&#x5305;&#x542B;&#x7279;&#x5B9A;&#x4E8E;&#x8FD9;&#x6761;&#x901A;&#x77E5;&#x7684;&#x4E00;&#x4E9B;&#x6570;&#x636E;&#x3002;</p>
 <p>&#x4F7F;&#x7528;&#x89C2;&#x5BDF;&#x8005;&#x6A21;&#x5F0F;&#x66F4;&#x6DF1;&#x5C42;&#x6B21;&#x7684;&#x52A8;&#x673A;&#x662F;&#xFF0C;&#x5F53;&#x6211;&#x4EEC;&#x9700;&#x8981;&#x7EF4;&#x62A4;&#x76F8;&#x5173;&#x5BF9;&#x8C61;&#x7684;&#x4E00;&#x81F4;&#x6027;&#x7684;&#x65F6;&#x5019;&#xFF0C;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x907F;&#x514D;&#x5BF9;&#x8C61;&#x4E4B;&#x95F4;&#x7684;&#x7D27;&#x5BC6;&#x8026;&#x5408;&#x3002;&#x4F8B;&#x5982;&#xFF0C;&#x4E00;&#x4E2A;&#x5BF9;&#x8C61;&#x53EF;&#x4EE5;&#x901A;&#x77E5;&#x53E6;&#x5916;&#x4E00;&#x4E2A;&#x5BF9;&#x8C61;&#xFF0C;&#x800C;&#x4E0D;&#x9700;&#x8981;&#x77E5;&#x9053;&#x8FD9;&#x4E2A;&#x5BF9;&#x8C61;&#x7684;&#x4FE1;&#x606F;&#x3002;</p>
 <h3 id="eventjs-&#x5B9E;&#x73B0;">Event.js &#x5B9E;&#x73B0;</h3>
-<p>   &#x5728; Node.js &#x4E2D;&#xFF0C;&#x6D41;&#xFF08;stream&#xFF09;&#x662F;&#x8BB8;&#x8BB8;&#x591A;&#x591A;&#x539F;&#x751F;&#x5BF9;&#x8C61;&#x7684;&#x7236;&#x7C7B;&#xFF0C;&#x89D2;&#x8272;&#x53EF;&#x8C13;&#x5341;&#x5206;&#x91CD;&#x8981;&#x3002;&#x4F46;&#x662F;&#xFF0C;&#x5F53;&#x6211;&#x4EEC;&#x6CBF;&#x7740;&#x201C;&#x65CF;&#x8C31;&#x201D;&#x5F80;&#x4E0A;&#x770B;&#x65F6;&#xFF0C;&#x4F1A;&#x53D1;&#x73B0; EventEmitter &#x7C7B;&#x662F;&#x6D41;&#xFF08;stream&#xFF09;&#x7C7B;&#x7684;&#x7236;&#x7C7B;&#xFF0C;&#x6240;&#x4EE5;&#x53EF;&#x4EE5;&#x8BF4;&#xFF0C;EventEmitter &#x7C7B;&#x662F; Node.js &#x7684;&#x6839;&#x57FA;&#x7C7B;&#x4E4B;&#x4E00;&#xFF0C;&#x5730;&#x4F4D;&#x53EF;&#x663E;&#x4E00;&#x822C;&#x3002;&#x867D;&#x7136; EventEmitter &#x7C7B;&#x66B4;&#x9732;&#x7684;&#x63A5;&#x53E3;&#x5E76;&#x4E0D;&#x591A;&#x800C;&#x4E14;&#x5341;&#x5206;&#x7B80;&#x5355;&#xFF0C;&#x5E76;&#x4E14;&#x662F;&#x5C11;&#x6570;&#x7EAF; JavaScript &#x5B9E;&#x73B0;&#x7684;&#x6A21;&#x5757;&#x4E4B;&#x4E00;&#xFF0C;&#x5B83;&#x7684;&#x5E94;&#x7528;&#x5B9E;&#x5728;&#x662F;&#x592A;&#x5E7F;&#x6CDB;&#xFF0C;&#x592A;&#x57FA;&#x7840;&#x4E86;&#xFF0C;&#x5728;&#x5B83;&#x7684;&#x5B9E;&#x73B0;&#x91CC;&#x5904;&#x5904;&#x95EA;&#x5149;&#x7740;&#x4E00;&#x4E9B;&#x4F18;&#x5316;&#x4EE3;&#x7801;&#x7684;&#x7CBE;&#x9AD3;&#x3002;</p>
 <h4 id="&#x89C2;&#x5BDF;&#x8005;&#x5B58;&#x50A8;">&#x89C2;&#x5BDF;&#x8005;&#x5B58;&#x50A8;</h4>
 <p>&#x4E00;&#x822C;&#x89C2;&#x5BDF;&#x8005;&#x7684;&#x8BBE;&#x8BA1;&#x6A21;&#x5F0F;&#x7684;&#x5B9E;&#x73B0;&#x903B;&#x8F91;&#x662F;&#x7C7B;&#x4F3C;&#x7684;&#xFF0C;&#x90FD;&#x662F;&#x6709;&#x4E00;&#x4E2A;&#x7C7B;&#x4F3C;map&#x7684;&#x7ED3;&#x6784;&#xFF0C;&#x5B58;&#x50A8;&#x76D1;&#x542C;&#x4E8B;&#x4EF6;&#x548C;&#x56DE;&#x8C03;&#x51FD;&#x6570;&#x7684;&#x5BF9;&#x5E94;&#x5173;&#x7CFB;&#x3002;</p>
 <pre><code class="lang-js"><span class="hljs-comment">// This constructor is used to store event handlers. Instantiating this is</span>
@@ -550,8 +554,154 @@ jsperf &#x663E;&#x793A;&#x7684;&#x6027;&#x80FD;&#x5DEE;&#x8DDD;&#x5728;1&#x500D;
 <blockquote>
 <p>&#x6DF1;&#x5165;&#x4E86;&#x89E3; <a href="https://github.com/iojs/io.js/pull/601" target="_blank">https://github.com/iojs/io.js/pull/601</a></p>
 </blockquote>
-<h3 id="node-&#x573A;&#x666F;">node &#x573A;&#x666F;</h3>
-<p>Nodejs&#x7684;Events&#x5B9E;&#x73B0;&#x4E86;&#x4E00;&#x79CD;&#x89C2;&#x5BDF;&#x8005;&#x6A21;&#x5F0F;&#xFF0C;&#x5176;&#x652F;&#x6301;&#x4E86;Nodejs&#x7684;&#x6838;&#x5FC3;&#x673A;&#x5236;&#xFF0C;&#x4E14;http / fs / mongoose&#x7B49;&#x90FD;&#x7EE7;&#x627F;&#x4E86;Events&#xFF0C;&#x53EF;&#x4EE5;&#x6DFB;&#x52A0;&#x76D1;&#x542C;&#x4E8B;&#x4EF6;&#x3002;</p>
+<h3 id="event&#x5728;node&#x4E2D;&#x7684;&#x5E94;&#x7528;">event&#x5728;node&#x4E2D;&#x7684;&#x5E94;&#x7528;</h3>
+<h4 id="&#x76D1;&#x63A7;&#x6587;&#x4EF6;&#x53D8;&#x5316;&#xFF0C;&#x901A;&#x77E5;&#x611F;&#x5174;&#x8DA3;&#x7684;&#x89C2;&#x5BDF;&#x8005;&#x3002;">&#x76D1;&#x63A7;&#x6587;&#x4EF6;&#x53D8;&#x5316;&#xFF0C;&#x901A;&#x77E5;&#x611F;&#x5174;&#x8DA3;&#x7684;&#x89C2;&#x5BDF;&#x8005;&#x3002;</h4>
+<pre><code class="lang-js"><span class="hljs-number">1389</span> <span class="hljs-function"><span class="hljs-keyword">function</span> <span class="hljs-title">FSWatcher</span>(<span class="hljs-params"></span>) </span>{
+<span class="hljs-number">1390</span>   EventEmitter.call(<span class="hljs-keyword">this</span>);
+<span class="hljs-number">1391</span> 
+<span class="hljs-number">1392</span>   <span class="hljs-keyword">var</span> self = <span class="hljs-keyword">this</span>;
+<span class="hljs-number">1393</span>   <span class="hljs-keyword">this</span>._handle = <span class="hljs-keyword">new</span> FSEvent();
+<span class="hljs-number">1394</span>   <span class="hljs-keyword">this</span>._handle.owner = <span class="hljs-keyword">this</span>;
+<span class="hljs-number">1395</span> 
+<span class="hljs-number">1396</span>   <span class="hljs-keyword">this</span>._handle.onchange = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">status, event, filename</span>) </span>{
+<span class="hljs-number">1397</span>     <span class="hljs-keyword">if</span> (status &lt; <span class="hljs-number">0</span>) {
+<span class="hljs-number">1398</span>       self._handle.close();
+<span class="hljs-number">1399</span>       <span class="hljs-keyword">const</span> error = !filename ?
+<span class="hljs-number">1400</span>           errnoException(status, <span class="hljs-string">&apos;Error watching file for changes:&apos;</span>) :
+<span class="hljs-number">1401</span>           errnoException(status,
+<span class="hljs-number">1402</span>                          <span class="hljs-string">`Error watching file <span class="hljs-subst">${filename}</span> for changes:`</span>);
+<span class="hljs-number">1403</span>       error.filename = filename;
+<span class="hljs-number">1404</span>       self.emit(<span class="hljs-string">&apos;error&apos;</span>, error);
+<span class="hljs-number">1405</span>     } <span class="hljs-keyword">else</span> {
+<span class="hljs-number">1406</span>       self.emit(<span class="hljs-string">&apos;change&apos;</span>, event, filename);
+<span class="hljs-number">1407</span>     }
+<span class="hljs-number">1408</span>   };
+<span class="hljs-number">1409</span> }
+<span class="hljs-number">1410</span> util.inherits(FSWatcher, EventEmitter);
+</code></pre>
+<p>L1410, FSWatcher &#x5BF9;&#x8C61;&#x7EE7;&#x627F; EventEmitter&#xFF0C;&#x4F7F;&#x81EA;&#x8EAB;&#x6709;&#x4E86;EventEmitter&#x7684;&#x65B9;&#x6CD5;&#x3002;
+L1404&#xFF0C; &#x5F53;&#x5E95;&#x5C42;&#x53D1;&#x751F;&#x9519;&#x8BEF;&#x65F6;&#xFF0C;&#x4F1A;&#x53D1;&#x51FA;&#x901A;&#x77E5;&#x4E8B;&#x4EF6; <code>error</code>&#x3002;
+L1406&#xFF0C; &#x6587;&#x4EF6;&#x53D1;&#x751F;&#x53D8;&#x5316;&#x65F6;&#xFF0C;FSWatcher &#x5BF9;&#x8C61;&#x53D1;&#x5C04; <code>change</code>&#x4E8B;&#x4EF6;&#xFF0C;&#x5177;&#x4F53;&#x7684;&#x53D8;&#x5316;&#x7531; <em>event</em>&#x6807;&#x8BC6;&#xFF0C;<em>filename</em>&#x6807;&#x8BC6;&#x6587;&#x4EF6;&#x540D;&#x3002;</p>
+<p>L1396, &#x6302;&#x5728;<code>FSEvent</code>&#x5BF9;&#x8C61;&#x4E0A;&#x7684;&#x65B9;&#x6CD5; <code>onchange</code>&#x4F5C;&#x4E3A; C++&#x8C03;&#x7528; Javascript &#x7684;&#x56DE;&#x8C03;&#xFF0C;&#x5728;&#x4E0D;&#x540C;&#x7684;&#x5E73;&#x53F0;&#x5B9E;&#x73B0;&#x65B9;&#x5F0F;&#x4E5F;&#x4E0D;&#x4E00;&#x6837;&#xFF0C;
+&#x6211;&#x4EEC;&#x5728;&#x6587;&#x4EF6;&#x7CFB;&#x7EDF;&#x7AE0;&#x8282;&#x5C06;&#x8BE6;&#x7EC6;&#x8BB2;&#x8FF0;&#x3002;</p>
+<p>&#x4E0A;&#x8FF0;&#x662F; fs &#x6A21;&#x5757;&#x76D1;&#x542C;&#x6587;&#x4EF6;&#x53D8;&#x5316;&#x7684;&#x5B9E;&#x73B0;&#xFF0C;&#x5E76;&#x5BFC;&#x51FA;API: <code>fs.watch()</code> &#x7ED9;&#x5916;&#x90E8;&#x4F7F;&#x7528;&#xFF0C;&#x53E6;&#x5916;&#x8FD8;&#x6709;&#x4E00;&#x4E2A; <code>fs.watchFile()</code>&#x3002;
+&#x6211;&#x4EEC;&#x67E5;&#x770B;&#x5B98;&#x65B9;&#x6587;&#x6863;&#xFF1A;</p>
+<blockquote>
+<p>fs.watchFile(filename, [options], listener)</p>
+<p>Stability: 2 - Unstable. Use fs.watch instead, if available.</p>
+<p>Watch for changes on filename.</p>
+<p>fs.watch(filename, [options], [listener])</p>
+<p>Stability: 2 - Unstable. Not available on all platforms.</p>
+</blockquote>
+<ul>
+<li>fs.watch() &#x5B98;&#x65B9;&#x5EFA;&#x8BAE;&#x4F7F;&#x7528;&#x3002;</li>
+<li>fs.watch() &#x5E76;&#x4E0D;&#x662F;&#x5168;&#x5E73;&#x53F0;&#x652F;&#x6301;&#xFF0C;&#x53EA;&#x6709; OSX &#x548C; Windows &#x652F;&#x6301;recursive&#x9009;&#x9879;&#x3002;</li>
+<li>fs.watch() &#x76D1;&#x542C;&#x6587;&#x4EF6;&#x6216;&#x76EE;&#x5F55;&#xFF0C; fs.watchFile() &#x76D1;&#x542C;&#x6587;&#x4EF6;&#x3002;</li>
+</ul>
+<p>fs.watch() &#x5982;&#x679C;&#x4F20;&#x5165; listener, &#x5982;&#x4E0B;&#xFF1A;</p>
+<pre><code class="lang-js">fs.watch(<span class="hljs-string">&apos;somedir&apos;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">event, filename</span>) </span>{
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-string">&apos;event is: &apos;</span> + event);
+  <span class="hljs-keyword">if</span> (filename) {
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">&apos;filename provided: &apos;</span> + filename);
+  }
+});
+</code></pre>
+<p>&#x5219;&#x9ED8;&#x8BA4;&#x6DFB;&#x52A0;&#x51FD;&#x6570; callback &#x5230; <code>change</code>&#x4E8B;&#x4EF6;&#x7684;&#x89C2;&#x5BDF;&#x8005;&#x4E2D;&#x3002;&#x5F53;&#x7136;&#x4E5F;&#x53EF;&#x4EE5;&#x6362;&#x4E2A;&#x59FF;&#x52BF;&#xFF0C;&#x5982;&#xFF1A;</p>
+<pre><code class="lang-js"><span class="hljs-keyword">var</span> watcher = fs.watch(<span class="hljs-string">&apos;somedir&apos;</span>);
+watcher.on(<span class="hljs-string">&apos;change&apos;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">event, filename</span>) </span>{
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-string">&apos;event is: &apos;</span> + event);
+  <span class="hljs-keyword">if</span> (filename) {
+    <span class="hljs-built_in">console</span>.log(<span class="hljs-string">&apos;filename provided: &apos;</span> + filename);
+  }
+}).on(<span class="hljs-string">&apos;error&apos;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">error</span>) </span>{
+
+})
+</code></pre>
+<p>&#x53EF;&#x4EE5;&#x5B9E;&#x73B0;&#x94FE;&#x5F0F;&#x8C03;&#x7528;, &#x6BD4;&#x5982;&#x7B26;&#x5408;&#x76EE;&#x524D;&#x5F88;&#x706B;&#x7684;Reactive Programming&#x3002;
+RP&#x7F16;&#x7A0B;&#x8303;&#x5F0F;&#x63D0;&#x9AD8;&#x4E86;&#x7F16;&#x7801;&#x7684;&#x62BD;&#x8C61;&#x7A0B;&#x5EA6;&#xFF0C;&#x4F60;&#x53EF;&#x4EE5;&#x66F4;&#x597D;&#x5730;&#x5173;&#x6CE8;&#x5728;&#x5546;&#x4E1A;&#x903B;&#x8F91;&#x4E2D;&#x5404;&#x79CD;&#x4E8B;&#x4EF6;&#x7684;&#x8054;&#x7CFB;&#x907F;&#x514D;&#x5927;&#x91CF;&#x7EC6;&#x8282;&#x800C;&#x7410;&#x788E;&#x7684;&#x5B9E;&#x73B0;&#xFF0C;&#x4F7F;&#x5F97;&#x7F16;&#x7801;&#x66F4;&#x52A0;&#x7B80;&#x6D01;&#x3002;</p>
+<h4 id="&#x9010;&#x884C;&#x8BFB;&#x53D6;-readline">&#x9010;&#x884C;&#x8BFB;&#x53D6; (Readline)</h4>
+<p>&#x6211;&#x4EEC;&#x6765;&#x770B;&#x770B;&#x9010;&#x884C;&#x8BFB;&#x53D6;&#x5BF9;&#x952E;&#x76D8;&#x8F93;&#x5165;&#x7684;&#x5904;&#x7406;&#xFF0C; &#x8FD9;&#x6D89;&#x53CA;&#x5230;&#x6BD4;&#x8F83;&#x590D;&#x6742;&#x7684;&#x72B6;&#x6001;&#x673A;&#x548C;&#x4E8B;&#x4EF6;&#x53D1;&#x9001;&#xFF0C;&#x662F;&#x5B66;&#x4E60;&#x4E8B;&#x4EF6;&#x6A21;&#x5757;&#x975E;&#x5E38;&#x597D;&#x7684;&#x4E00;&#x4E2A;&#x4F8B;&#x5B50;&#x3002;</p>
+<pre><code class="lang-js"> <span class="hljs-number">212</span> Interface.prototype._onLine = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">line</span>) </span>{
+ <span class="hljs-number">213</span>   <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>._questionCallback) {
+ <span class="hljs-number">214</span>     <span class="hljs-keyword">var</span> cb = <span class="hljs-keyword">this</span>._questionCallback;
+ <span class="hljs-number">215</span>     <span class="hljs-keyword">this</span>._questionCallback = <span class="hljs-literal">null</span>;
+ <span class="hljs-number">216</span>     <span class="hljs-keyword">this</span>.setPrompt(<span class="hljs-keyword">this</span>._oldPrompt);
+ <span class="hljs-number">217</span>     cb(line);
+ <span class="hljs-number">218</span>   } <span class="hljs-keyword">else</span> {
+ <span class="hljs-number">219</span>     <span class="hljs-keyword">this</span>.emit(<span class="hljs-string">&apos;line&apos;</span>, line);
+ <span class="hljs-number">220</span>   }
+ <span class="hljs-number">221</span> };
+</code></pre>
+<p>&#x5982;&#x679C;&#x6CA1;&#x6709;&#x9884;&#x5148;&#x8BBE;&#x5B9A;&#x6307;&#x5B9A;&#x7684;query&#xFF0C;&#x7136;&#x540E;&#x7528;&#x6237;&#x5E94;&#x7B54;&#x540E;&#x89E6;&#x53D1;&#x6307;&#x5B9A;&#x7684;callback&#xFF0C;&#x90A3;&#x4E48; <code>Interface</code>&#x5BF9;&#x8C61;&#x4F1A;&#x89E6;&#x53D1; <code>line</code>&#x4E8B;&#x4EF6;&#x3002;
+&#x5728; input &#x6D41;&#x63A5;&#x53D7;&#x4E86;&#x4E00;&#x4E2A; <code>\n</code> &#x65F6;&#x89E6;&#x53D1;&#xFF0C;&#x901A;&#x5E38;&#x5728;&#x7528;&#x6237;&#x6572;&#x51FB;&#x56DE;&#x8F66;&#x6216;&#x8005;&#x8FD4;&#x56DE;&#x65F6;&#x63A5;&#x6536;&#x3002; &#x8FD9;&#x662F;&#x4E00;&#x4E2A;&#x76D1;&#x542C;&#x7528;&#x6237;&#x8F93;&#x5165;&#x7684;&#x5229;&#x5668;&#x3002;
+&#x76D1;&#x542C; line &#x4E8B;&#x4EF6;&#x7684;&#x793A;&#x4F8B;:</p>
+<pre><code class="lang-js"><span class="hljs-keyword">var</span> readline = <span class="hljs-built_in">require</span>(<span class="hljs-string">&apos;readline&apos;</span>);
+<span class="hljs-keyword">var</span> rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+rl.on(<span class="hljs-string">&apos;line&apos;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span> (<span class="hljs-params">cmd</span>) </span>{
+  <span class="hljs-built_in">console</span>.log(<span class="hljs-string">&apos;You just typed: &apos;</span>+ cmd);
+});
+</code></pre>
+<p>&#x8BE5;&#x6A21;&#x5757;&#x5BF9;&#x590D;&#x5408;&#x529F;&#x80FD;&#x6309;&#x952E;&#xFF0C;&#x6BD4;&#x5982; Ctrl + c, Ctrl + z&#x4E5F;&#x505A;&#x4E86;&#x76F8;&#x5E94;&#x7684;&#x5904;&#x7406;, &#x6211;&#x4EEC;&#x62FF;&#x5BF9; Ctrl + c &#x7684;&#x4EE3;&#x7801;&#x8FDB;&#x884C;&#x5206;&#x6790;&#xFF1A;</p>
+<pre><code class="lang-js"> <span class="hljs-number">678</span> Interface.prototype._ttyWrite = <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">s, key</span>) </span>{
+ <span class="hljs-number">679</span>   key = key || {};
+ <span class="hljs-number">680</span> 
+ <span class="hljs-number">681</span>   <span class="hljs-comment">// Ignore escape key - Fixes #2876</span>
+ <span class="hljs-number">682</span>   <span class="hljs-keyword">if</span> (key.name == <span class="hljs-string">&apos;escape&apos;</span>) <span class="hljs-keyword">return</span>;
+ <span class="hljs-number">683</span> 
+ <span class="hljs-number">684</span>   <span class="hljs-keyword">if</span> (key.ctrl &amp;&amp; key.shift) {
+ <span class="hljs-number">685</span>     <span class="hljs-comment">/* Control and shift pressed */</span>
+ <span class="hljs-number">686</span>     <span class="hljs-keyword">switch</span> (key.name) {
+ <span class="hljs-number">687</span>       <span class="hljs-keyword">case</span> <span class="hljs-string">&apos;backspace&apos;</span>:
+ <span class="hljs-number">688</span>         <span class="hljs-keyword">this</span>._deleteLineLeft();
+ <span class="hljs-number">689</span>         <span class="hljs-keyword">break</span>;
+ <span class="hljs-number">690</span> 
+ <span class="hljs-number">691</span>       <span class="hljs-keyword">case</span> <span class="hljs-string">&apos;delete&apos;</span>:
+ <span class="hljs-number">692</span>         <span class="hljs-keyword">this</span>._deleteLineRight();
+ <span class="hljs-number">693</span>         <span class="hljs-keyword">break</span>;
+ <span class="hljs-number">694</span>     }
+ <span class="hljs-number">695</span> 
+ <span class="hljs-number">696</span>   } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (key.ctrl) {
+ <span class="hljs-number">697</span>     <span class="hljs-comment">/* Control key pressed */</span>
+ <span class="hljs-number">698</span> 
+ <span class="hljs-number">699</span>     <span class="hljs-keyword">switch</span> (key.name) {
+ <span class="hljs-number">700</span>       <span class="hljs-keyword">case</span> <span class="hljs-string">&apos;c&apos;</span>:
+ <span class="hljs-number">701</span>         <span class="hljs-keyword">if</span> (<span class="hljs-keyword">this</span>.listenerCount(<span class="hljs-string">&apos;SIGINT&apos;</span>) &gt; <span class="hljs-number">0</span>) {
+ <span class="hljs-number">702</span>           <span class="hljs-keyword">this</span>.emit(<span class="hljs-string">&apos;SIGINT&apos;</span>);
+ <span class="hljs-number">703</span>         } <span class="hljs-keyword">else</span> {
+ <span class="hljs-number">704</span>           <span class="hljs-comment">// This readline instance is finished</span>
+ <span class="hljs-number">705</span>           <span class="hljs-keyword">this</span>.close();
+ <span class="hljs-number">706</span>         }
+ <span class="hljs-number">707</span>         <span class="hljs-keyword">break</span>;
+ <span class="hljs-number">708</span>     &#x7701;&#x7565;...
+ <span class="hljs-number">709</span> }
+</code></pre>
+<ul>
+<li>L681-L682, &#x5FFD;&#x7565; <code>ESC</code> &#x952E;&#x3002;</li>
+<li>L684, &#x9996;&#x5148;&#x5224;&#x65AD;&#x662F;&#x5426;&#x662F; Ctrl &#x548C; Shift&#x590D;&#x5408;&#x952E;&#x540C;&#x65F6;&#x6309;&#x4E0B;&#xFF0C;&#x5982;&#x679C;&#x662F;&#x5219;L685-L694&#x4F18;&#x5148;&#x5904;&#x7406;&#x3002;</li>
+<li>L696, &#x5982;&#x679C;&#x662F;&#x6309;&#x4E0B; Ctrl &#x952E;&#xFF0C;L699 &#x7EE7;&#x7EED;&#x5224;&#x65AD;&#xFF0C;&#x5982;&#x679C;&#x53E6;&#x4E00;&#x4E2A;&#x662F; <code>c</code> , &#x9ED8;&#x8BA4;&#x662F;&#x5173;&#x95ED;&#x5BF9;&#x8C61;&#x3002; </li>
+<li>L701, &#x5982;&#x679C;&#x5916;&#x90E8;&#x6709;&#x89C2;&#x5BDF;&#x8005;, &#x5219;&#x53D1;&#x9001; <code>SIGINT</code>&#x4E8B;&#x4EF6;&#xFF0C;&#x4EA4;&#x7531;&#x89C2;&#x5BDF;&#x8005;&#x5904;&#x7406;&#x3002;</li>
+</ul>
+<h4 id="repl">REPL</h4>
+<p>&#x4E00;&#x4E2A; Read-Eval-Print-Loop&#xFF08;REPL&#xFF0C;&#x8BFB;&#x53D6;-&#x6267;&#x884C;-&#x8F93;&#x51FA;&#x5FAA;&#x73AF;&#xFF09;&#x65E2;&#x53EF;&#x7528;&#x4E8E;&#x72EC;&#x7ACB;&#x7A0B;&#x5E8F;&#x4E5F;&#x53EF;&#x5F88;&#x5BB9;&#x6613;&#x5730;&#x88AB;&#x96C6;&#x6210;&#x5230;&#x5176;&#x5B83;&#x7A0B;&#x5E8F;&#x4E2D;&#x3002;REPL &#x63D0;&#x4F9B;&#x4E86;&#x4E00;&#x79CD;&#x4EA4;&#x4E92;&#x5730;&#x6267;&#x884C; JavaScript &#x5E76;&#x67E5;&#x770B;&#x8F93;&#x51FA;&#x7684;&#x65B9;&#x5F0F;&#x3002;&#x5B83;&#x53EF;&#x4EE5;&#x88AB;&#x7528;&#x4F5C;&#x8C03;&#x8BD5;&#x3001;&#x6D4B;&#x8BD5;&#x6216;&#x4EC5;&#x4EC5;&#x5C1D;&#x8BD5;&#x67D0;&#x4E9B;&#x4E1C;&#x897F;&#x3002;</p>
+<p>&#x5728;&#x547D;&#x4EE4;&#x884C;&#x4E2D;&#x4E0D;&#x5E26;&#x4EFB;&#x4F55;&#x53C2;&#x6570;&#x6267;&#x884C; node &#x60A8;&#x4FBF;&#x4F1A;&#x8FDB;&#x5165; REPL&#x3002;&#x5B83;&#x63D0;&#x4F9B;&#x4E86;&#x4E00;&#x4E2A;&#x7B80;&#x5355;&#x7684; Emacs &#x884C;&#x7F16;&#x8F91;&#x3002;</p>
+<p>REPLServer &#x7EE7;&#x627F; Interface&#xFF0C;&#x5982;&#x4EE3;&#x7801;&#x6240;&#x793A;&#xFF1A; <code>inherits(REPLServer, rl.Interface);</code></p>
+<p>&#x5E76;&#x76D1;&#x542C; line &#x4E8B;&#x4EF6;, &#x81EA;&#x5B9A;&#x4E49;&#x5173;&#x952E;&#x5B57;&#xFF0C;&#x4EE5;&#x652F;&#x6301;&#x4EA4;&#x4E92;&#x5F0F;&#x7684;&#x547D;&#x4EE4;&#x3002;</p>
+<pre><code class="lang-shell">$ NODE_DEBUG=REPL node
+REPL 37391: line &quot;.help&quot;
+break Sometimes you get stuck, this gets you out
+clear Alias for .break
+exit  Exit the repl
+help  Show repl options
+load  Load JS from a file into the REPL session
+save  Save all evaluated commands in this REPL session to a file
+</code></pre>
+<h3 id="&#x603B;&#x7ED3;">&#x603B;&#x7ED3;</h3>
+<p>Event &#x6A21;&#x5757;&#x662F;&#x89C2;&#x5BDF;&#x8005;&#x8BBE;&#x8BA1;&#x6A21;&#x5F0F;&#x7684;&#x5178;&#x578B;&#x5E94;&#x7528;&#x3002;&#x540C;&#x65F6;&#x4E5F;&#x662F;Reactive Programming&#x7684;&#x7CBE;&#x9AD3;&#x6240;&#x5728;&#x3002;</p>
+<h3 id="&#x53C2;&#x8003;">&#x53C2;&#x8003;</h3>
+<p>[1].<a href="https://segmentfault.com/a/1190000005051034" target="_blank">https://segmentfault.com/a/1190000005051034</a></p>
 
                     
                     </section>

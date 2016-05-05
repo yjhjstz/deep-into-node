@@ -1,11 +1,16 @@
 
 ## Event
+> Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient.
+
+这是Node.Js官网对自身的介绍,明确强调了Node.Js使用了一个事件驱动、非阻塞式 I/O 的模型,使其轻量又高效。
+
+而且在Node中大量核心模块都使用了Event的机制,因此可以说是整个Node里最重要的模块之一.
+
 
 ### 涉及源码
-- lib/events.js
+- [lib/events.js](https://github.com/nodejs/node/blob/v6.0.0/lib/events.js)
 
 ### 观察者模式
-
 
 
 ![](https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Observer.svg/854px-Observer.svg.png)
@@ -19,7 +24,6 @@
 使用观察者模式更深层次的动机是，当我们需要维护相关对象的一致性的时候，我们可以避免对象之间的紧密耦合。例如，一个对象可以通知另外一个对象，而不需要知道这个对象的信息。
 
 ### Event.js 实现
-   在 Node.js 中，流（stream）是许许多多原生对象的父类，角色可谓十分重要。但是，当我们沿着“族谱”往上看时，会发现 EventEmitter 类是流（stream）类的父类，所以可以说，EventEmitter 类是 Node.js 的根基类之一，地位可显一般。虽然 EventEmitter 类暴露的接口并不多而且十分简单，并且是少数纯 JavaScript 实现的模块之一，它的应用实在是太广泛，太基础了，在它的实现里处处闪光着一些优化代码的精髓。
    
 #### 观察者存储
 一般观察者的设计模式的实现逻辑是类似的，都是有一个类似map的结构，存储监听事件和回调函数的对应关系。
@@ -157,5 +161,180 @@ jsperf 显示的性能差距在1倍左右。
 
 
 
-### node 场景
-Nodejs的Events实现了一种观察者模式，其支持了Nodejs的核心机制，且http / fs / mongoose等都继承了Events，可以添加监听事件。
+### event在node中的应用
+#### 监控文件变化，通知感兴趣的观察者。
+
+```js
+1389 function FSWatcher() {
+1390   EventEmitter.call(this);
+1391 
+1392   var self = this;
+1393   this._handle = new FSEvent();
+1394   this._handle.owner = this;
+1395 
+1396   this._handle.onchange = function(status, event, filename) {
+1397     if (status < 0) {
+1398       self._handle.close();
+1399       const error = !filename ?
+1400           errnoException(status, 'Error watching file for changes:') :
+1401           errnoException(status,
+1402                          `Error watching file ${filename} for changes:`);
+1403       error.filename = filename;
+1404       self.emit('error', error);
+1405     } else {
+1406       self.emit('change', event, filename);
+1407     }
+1408   };
+1409 }
+1410 util.inherits(FSWatcher, EventEmitter);
+```
+
+L1410, FSWatcher 对象继承 EventEmitter，使自身有了EventEmitter的方法。
+L1404， 当底层发生错误时，会发出通知事件 `error`。
+L1406， 文件发生变化时，FSWatcher 对象发射 `change`事件，具体的变化由 *event*标识，*filename*标识文件名。
+
+L1396, 挂在`FSEvent`对象上的方法 `onchange`作为 C++调用 Javascript 的回调，在不同的平台实现方式也不一样，
+我们在文件系统章节将详细讲述。
+
+上述是 fs 模块监听文件变化的实现，并导出API: `fs.watch()` 给外部使用，另外还有一个 `fs.watchFile()`。
+我们查看官方文档：
+
+> fs.watchFile(filename, [options], listener)
+
+> Stability: 2 - Unstable. Use fs.watch instead, if available.
+
+> Watch for changes on filename.
+
+> fs.watch(filename, [options], [listener])
+
+> Stability: 2 - Unstable. Not available on all platforms.
+
+- fs.watch() 官方建议使用。
+- fs.watch() 并不是全平台支持，只有 OSX 和 Windows 支持recursive选项。
+- fs.watch() 监听文件或目录， fs.watchFile() 监听文件。
+
+
+fs.watch() 如果传入 listener, 如下：
+```js
+fs.watch('somedir', function (event, filename) {
+  console.log('event is: ' + event);
+  if (filename) {
+    console.log('filename provided: ' + filename);
+  }
+});
+```
+则默认添加函数 callback 到 `change`事件的观察者中。当然也可以换个姿势，如：
+
+```js
+var watcher = fs.watch('somedir');
+watcher.on('change', function (event, filename) {
+  console.log('event is: ' + event);
+  if (filename) {
+    console.log('filename provided: ' + filename);
+  }
+}).on('error', function(error) {
+  
+})
+```
+可以实现链式调用, 比如符合目前很火的Reactive Programming。
+RP编程范式提高了编码的抽象程度，你可以更好地关注在商业逻辑中各种事件的联系避免大量细节而琐碎的实现，使得编码更加简洁。
+
+#### 逐行读取 (Readline)
+
+我们来看看逐行读取对键盘输入的处理， 这涉及到比较复杂的状态机和事件发送，是学习事件模块非常好的一个例子。
+
+```js
+ 212 Interface.prototype._onLine = function(line) {
+ 213   if (this._questionCallback) {
+ 214     var cb = this._questionCallback;
+ 215     this._questionCallback = null;
+ 216     this.setPrompt(this._oldPrompt);
+ 217     cb(line);
+ 218   } else {
+ 219     this.emit('line', line);
+ 220   }
+ 221 };
+```
+如果没有预先设定指定的query，然后用户应答后触发指定的callback，那么 `Interface`对象会触发 `line`事件。
+在 input 流接受了一个 `\n` 时触发，通常在用户敲击回车或者返回时接收。 这是一个监听用户输入的利器。
+监听 line 事件的示例:
+
+```js
+var readline = require('readline');
+var rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+rl.on('line', function (cmd) {
+  console.log('You just typed: '+ cmd);
+});
+```
+
+该模块对复合功能按键，比如 Ctrl + c, Ctrl + z也做了相应的处理, 我们拿对 Ctrl + c 的代码进行分析：
+```js
+ 678 Interface.prototype._ttyWrite = function(s, key) {
+ 679   key = key || {};
+ 680 
+ 681   // Ignore escape key - Fixes #2876
+ 682   if (key.name == 'escape') return;
+ 683 
+ 684   if (key.ctrl && key.shift) {
+ 685     /* Control and shift pressed */
+ 686     switch (key.name) {
+ 687       case 'backspace':
+ 688         this._deleteLineLeft();
+ 689         break;
+ 690 
+ 691       case 'delete':
+ 692         this._deleteLineRight();
+ 693         break;
+ 694     }
+ 695 
+ 696   } else if (key.ctrl) {
+ 697     /* Control key pressed */
+ 698 
+ 699     switch (key.name) {
+ 700       case 'c':
+ 701         if (this.listenerCount('SIGINT') > 0) {
+ 702           this.emit('SIGINT');
+ 703         } else {
+ 704           // This readline instance is finished
+ 705           this.close();
+ 706         }
+ 707         break;
+ 708     省略...
+ 709 }
+```
+- L681-L682, 忽略 `ESC` 键。
+- L684, 首先判断是否是 Ctrl 和 Shift复合键同时按下，如果是则L685-L694优先处理。
+- L696, 如果是按下 Ctrl 键，L699 继续判断，如果另一个是 `c` , 默认是关闭对象。 
+- L701, 如果外部有观察者, 则发送 `SIGINT`事件，交由观察者处理。
+
+
+#### REPL
+一个 Read-Eval-Print-Loop（REPL，读取-执行-输出循环）既可用于独立程序也可很容易地被集成到其它程序中。REPL 提供了一种交互地执行 JavaScript 并查看输出的方式。它可以被用作调试、测试或仅仅尝试某些东西。
+
+在命令行中不带任何参数执行 node 您便会进入 REPL。它提供了一个简单的 Emacs 行编辑。
+
+REPLServer 继承 Interface，如代码所示： `inherits(REPLServer, rl.Interface);`
+
+并监听 line 事件, 自定义关键字，以支持交互式的命令。
+```shell
+$ NODE_DEBUG=REPL node
+REPL 37391: line ".help"
+break Sometimes you get stuck, this gets you out
+clear Alias for .break
+exit  Exit the repl
+help  Show repl options
+load  Load JS from a file into the REPL session
+save  Save all evaluated commands in this REPL session to a file
+```
+
+
+### 总结
+Event 模块是观察者设计模式的典型应用。同时也是Reactive Programming的精髓所在。
+
+
+### 参考
+[1].https://segmentfault.com/a/1190000005051034
+
