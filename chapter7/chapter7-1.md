@@ -330,6 +330,47 @@ load  Load JS from a file into the REPL session
 save  Save all evaluated commands in this REPL session to a file
 ```
 
+我们看下代码实现：
+```js
+399   self.on('line', function(cmd) {
+ 400     debug('line %j', cmd);
+ 401     sawSIGINT = false;
+ 402 
+ 403     // leading whitespaces in template literals should not be trimmed.
+ 404     if (self._inTemplateLiteral) {
+ 405       self._inTemplateLiteral = false;
+ 406     } else {
+ 407       cmd = self.lineParser.parseLine(cmd);
+ 408     }
+ 409 
+ 410     // Check to see if a REPL keyword was used. If it returns true,
+ 411     // display next prompt and return.
+ 412     if (cmd && cmd.charAt(0) === '.' && isNaN(parseFloat(cmd))) {
+ 413       var matches = cmd.match(/^\.([^\s]+)\s*(.*)$/);
+ 414       var keyword = matches && matches[1];
+ 415       var rest = matches && matches[2];
+ 416       if (self.parseREPLKeyword(keyword, rest) === true) {
+ 417         return;
+ 418       } else if (!self.bufferedCommand) {
+ 419         self.outputStream.write('Invalid REPL keyword\n');
+ 420         finish(null);
+ 421         return;
+ 422       }
+ 423     }
+ 424     ...
+ 425   }
+```
+- L400， 通过设置环境变量NODE_DEBUG=REPL打开调试功能。
+- L407， 解析 cmd 输入， 处理正则的情况。
+- L412, 查看是否以 `.`开头，并且不是浮点数，则利用正则匹配字符串，
+   - 以 .help 为例，得到的 `matches` 为 `[ '.help', 'help', '', index: 0, input: '.help' ]`，
+     keyword 为 help, rest 为 ''.
+- L416, 通过 keyword 从 commands 对象找到对应的方法执行。
+
+
+
+#### REPL实例
+一个在curl(1)上运行的REPL实例的例子可以查看这里： https://gist.github.com/2053342
 
 ### 总结
 Event 模块是观察者设计模式的典型应用。同时也是Reactive Programming的精髓所在。
