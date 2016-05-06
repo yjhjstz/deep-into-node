@@ -19,7 +19,7 @@ Node.js 的源码分析，基于 v6.0.0.
 
 本书版权归作者所有，未经作者授权，禁止一切方式转载。
 
-- 联系作者 @江凌 微博：http://weibo.com/yangjianghua， 
+- 联系作者 @江凌 微博：http://weibo.com/yangjianghua 
 
 - 邮箱：yjhjstz#gmail.com， 博客：alinode.aliyun.com/blog
 
