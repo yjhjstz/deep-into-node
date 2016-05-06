@@ -53,7 +53,7 @@
         data-chapter-title="C++和JS 交互"
         data-filepath="chapter2/chapter2-1.md"
         data-basepath=".."
-        data-revision="Fri May 06 2016 11:29:14 GMT+0800 (CST)"
+        data-revision="Fri May 06 2016 15:17:53 GMT+0800 (CST)"
         data-innerlanguage="">
     
 
@@ -429,6 +429,176 @@
                     
                         <h2 id="c&#x548C;-js-&#x4EA4;&#x4E92;">C++&#x548C; JS &#x4EA4;&#x4E92;</h2>
 <p>&#x672C;&#x7AE0;&#x4E3B;&#x8981;&#x6765;&#x8BB2;&#x8BB2;&#x5982;&#x4F55;&#x901A;&#x8FC7;V8&#x6765;&#x5B9E;&#x73B0;JS&#x8C03;&#x7528;C++&#x3002;JS&#x8C03;&#x7528;C++&#xFF0C;&#x5206;&#x4E3A;JS&#x8C03;&#x7528;C++&#x51FD;&#x6570;&#xFF08;&#x5168;&#x5C40;&#xFF09;&#xFF0C;&#x548C;&#x8C03;&#x7528;C++&#x7C7B;&#x3002;</p>
+<h3 id="&#x6570;&#x636E;&#x53CA;&#x6A21;&#x677F;">&#x6570;&#x636E;&#x53CA;&#x6A21;&#x677F;</h3>
+<p>&#x7531;&#x4E8E; C++ &#x539F;&#x751F;&#x6570;&#x636E;&#x7C7B;&#x578B;&#x4E0E; JavaScript &#x4E2D;&#x6570;&#x636E;&#x7C7B;&#x578B;&#x6709;&#x5F88;&#x5927;&#x5DEE;&#x5F02;&#xFF0C;&#x56E0;&#x6B64; V8 &#x63D0;&#x4F9B;&#x4E86; Value &#x7C7B;&#xFF0C;&#x4ECE; JavaScript &#x5230; C++&#xFF0C;&#x4ECE; C++ &#x5230; JavaScrpt &#x90FD;&#x4F1A;&#x7528;&#x5230;&#x8FD9;&#x4E2A;&#x7C7B;&#x53CA;&#x5176;&#x5B50;&#x7C7B;&#xFF0C;&#x6BD4;&#x5982;&#xFF1A;</p>
+<pre><code class="lang-c++">Handle&lt;Value&gt; Add(<span class="hljs-keyword">const</span> Arguments&amp; args){ 
+   <span class="hljs-keyword">int</span> a = args[<span class="hljs-number">0</span>]-&gt;Uint32Value(); 
+   <span class="hljs-keyword">int</span> b = args[<span class="hljs-number">1</span>]-&gt;Uint32Value(); 
+
+   <span class="hljs-keyword">return</span> Integer::New(a+b); 
+ }
+</code></pre>
+<p>Integer &#x5373;&#x4E3A; Value &#x7684;&#x4E00;&#x4E2A;&#x5B50;&#x7C7B;&#x3002;</p>
+<p>V8 &#x4E2D;&#xFF0C;&#x6709;&#x4E24;&#x4E2A;&#x6A21;&#x677F; (Template) &#x7C7B; ( &#x5E76;&#x975E; C++ &#x4E2D;&#x7684;&#x6A21;&#x677F;&#x7C7B; )&#xFF1A;</p>
+<ul>
+<li>&#x5BF9;&#x8C61;&#x6A21;&#x677F; (ObjectTempalte) </li>
+<li>&#x51FD;&#x6570;&#x6A21;&#x677F; (FunctionTemplate)
+&#x8FD9;&#x4E24;&#x4E2A;&#x6A21;&#x677F;&#x7C7B;&#x7528;&#x4EE5;&#x5B9A;&#x4E49; JavaScript &#x5BF9;&#x8C61;&#x548C; JavaScript &#x51FD;&#x6570;&#x3002;&#x6211;&#x4EEC;&#x5728;&#x540E;&#x7EED;&#x7684;&#x5C0F;&#x8282;&#x90E8;&#x5206;&#x5C06;&#x4F1A;&#x63A5;&#x89E6;&#x5230;&#x6A21;&#x677F;&#x7C7B;&#x7684;&#x5B9E;&#x4F8B;&#x3002;&#x901A;&#x8FC7;&#x4F7F;&#x7528;
+ObjectTemplate&#xFF0C;&#x53EF;&#x4EE5;&#x5C06; C++ &#x4E2D;&#x7684;&#x5BF9;&#x8C61;&#x66B4;&#x9732;&#x7ED9;&#x811A;&#x672C;&#x73AF;&#x5883;&#xFF0C;&#x7C7B;&#x4F3C;&#x7684;&#xFF0C;FunctionTemplate &#x7528;&#x4EE5;&#x5C06; C++
+&#x51FD;&#x6570;&#x66B4;&#x9732;&#x7ED9;&#x811A;&#x672C;&#x73AF;&#x5883;&#xFF0C;&#x4EE5;&#x4F9B;&#x811A;&#x672C;&#x4F7F;&#x7528;&#x3002;</li>
+</ul>
+<h3 id="js-&#x4F7F;&#x7528;-c-&#x53D8;&#x91CF;">JS &#x4F7F;&#x7528; C++ &#x53D8;&#x91CF;</h3>
+<p>&#x5728; JavaScript &#x4E0E; V8 &#x95F4;&#x5171;&#x4EAB;&#x53D8;&#x91CF;&#x4E8B;&#x5B9E;&#x4E0A;&#x662F;&#x975E;&#x5E38;&#x5BB9;&#x6613;&#x7684;&#xFF0C;&#x57FA;&#x672C;&#x6A21;&#x677F;&#x5982;&#x4E0B;&#xFF1A;</p>
+<pre><code class="lang-c++"><span class="hljs-keyword">static</span> <span class="hljs-keyword">char</span> sname[<span class="hljs-number">512</span>] = {<span class="hljs-number">0</span>}; 
+
+ <span class="hljs-keyword">static</span> Handle&lt;Value&gt; NameGetter(Local&lt;String&gt; name, 
+     <span class="hljs-keyword">const</span> AccessorInfo&amp; info) { 
+   <span class="hljs-keyword">return</span> String::New((<span class="hljs-keyword">char</span>*)&amp;sname,<span class="hljs-built_in">strlen</span>((<span class="hljs-keyword">char</span>*)&amp;sname)); 
+ } 
+
+ <span class="hljs-function"><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">NameSetter</span><span class="hljs-params">(Local&lt;String&gt; name, 
+     Local&lt;Value&gt; value, 
+     <span class="hljs-keyword">const</span> AccessorInfo&amp; info)</span> </span>{ 
+   Local&lt;String&gt; str = value-&gt;ToString(); 
+   str-&gt;WriteAscii((<span class="hljs-keyword">char</span>*)&amp;sname); 
+ }
+</code></pre>
+<p>&#x5B9A;&#x4E49;&#x4E86; NameGetter, NameSetter &#x4E4B;&#x540E;&#xFF0C;&#x5728; main &#x51FD;&#x6570;&#x4E2D;&#xFF0C;&#x5C06;&#x5176;&#x6CE8;&#x518C;&#x5728; global &#x4E0A;&#xFF1A;</p>
+<pre><code class="lang-c++"> <span class="hljs-comment">// Create a template for the global object. </span>
+ Handle&lt;ObjectTemplate&gt; global = ObjectTemplate::New(); 
+ <span class="hljs-comment">//public the name variable to script </span>
+ global-&gt;SetAccessor(String::New(<span class="hljs-string">&quot;name&quot;</span>), NameGetter, NameSetter);
+</code></pre>
+<h3 id="js-&#x8C03;&#x7528;-c-&#x51FD;&#x6570;">JS &#x8C03;&#x7528; C++ &#x51FD;&#x6570;</h3>
+<p>&#x5728; JavaScript &#x4E2D;&#x8C03;&#x7528; C++ &#x51FD;&#x6570;&#x662F;&#x811A;&#x672C;&#x5316;&#x6700;&#x5E38;&#x89C1;&#x7684;&#x65B9;&#x5F0F;&#xFF0C;&#x901A;&#x8FC7;&#x4F7F;&#x7528; C++ &#x51FD;&#x6570;&#xFF0C;&#x53EF;&#x4EE5;&#x6781;&#x5927;&#x7A0B;&#x5EA6;&#x7684;&#x589E;&#x5F3A; JavaScript &#x811A;&#x672C;&#x7684;&#x80FD;&#x529B;&#xFF0C;&#x5982;&#x6587;&#x4EF6;&#x8BFB;&#x5199;&#xFF0C;&#x7F51;&#x7EDC; / &#x6570;&#x636E;&#x5E93;&#x8BBF;&#x95EE;&#xFF0C;&#x56FE;&#x5F62; / &#x56FE;&#x50CF;&#x5904;&#x7406;&#x7B49;&#x7B49;&#xFF0C;&#x7C7B;&#x4F3C;&#x4E8E; JAVA &#x7684; jni &#x6280;&#x672F;&#x3002;</p>
+<p>&#x5728; C++ &#x4EE3;&#x7801;&#x4E2D;&#xFF0C;&#x5B9A;&#x4E49;&#x4EE5;&#x4E0B;&#x539F;&#x578B;&#x7684;&#x51FD;&#x6570;&#xFF1A;</p>
+<pre><code class="lang-c++"> Handle&lt;Value&gt; func(<span class="hljs-keyword">const</span> Arguments&amp; args){ 
+   <span class="hljs-comment">//return something </span>
+ }
+</code></pre>
+<p>&#x7136;&#x540E;&#xFF0C;&#x518D;&#x5C06;&#x5176;&#x516C;&#x5F00;&#x7ED9;&#x811A;&#x672C;&#xFF1A;
+<code>global-&gt;Set(String::New(&quot;func&quot;),FunctionTemplate::New(func));</code></p>
+<h3 id="js-&#x4F7F;&#x7528;-c-&#x7C7B;">JS &#x4F7F;&#x7528; C++ &#x7C7B;</h3>
+<p>&#x5982;&#x679C;&#x4ECE;&#x9762;&#x5411;&#x5BF9;&#x8C61;&#x7684;&#x89C6;&#x89D2;&#x6765;&#x5206;&#x6790;&#xFF0C;&#x6700;&#x5408;&#x7406;&#x7684;&#x65B9;&#x5F0F;&#x662F;&#x5C06; C++ &#x7C7B;&#x516C;&#x5F00;&#x7ED9; JavaScript&#xFF0C;&#x8FD9;&#x6837;&#x53EF;&#x4EE5;&#x5C06; JavaScript
+&#x5185;&#x7F6E;&#x7684;&#x5BF9;&#x8C61;&#x6570;&#x91CF;&#x5927;&#x5927;&#x589E;&#x52A0;&#xFF0C;&#x4ECE;&#x800C;&#x5C3D;&#x53EF;&#x80FD;&#x5C11;&#x7684;&#x4F7F;&#x7528;&#x5BBF;&#x4E3B;&#x8BED;&#x8A00;&#xFF0C;&#x800C;&#x66F4;&#x5927;&#x7684;&#x5229;&#x7528;&#x52A8;&#x6001;&#x8BED;&#x8A00;&#x7684;&#x7075;&#x6D3B;&#x6027;&#x548C;&#x6269;&#x5C55;&#x6027;&#x3002;&#x4E8B;&#x5B9E;&#x4E0A;&#xFF0C;C++ 
+&#x8BED;&#x8A00;&#x6982;&#x5FF5;&#x4F17;&#x591A;&#xFF0C;&#x5185;&#x5BB9;&#x7E41;&#x590D;&#xFF0C;&#x5B66;&#x4E60;&#x66F2;&#x7EBF;&#x8F83; JavaScript &#x8FDC;&#x4E3A;&#x9661;&#x5CED;&#x3002;&#x6700;&#x597D;&#x7684;&#x5E94;&#x7528;&#x573A;&#x666F;&#x662F;&#xFF1A;&#x65E2;&#x6709;&#x811A;&#x672C;&#x8BED;&#x8A00;&#x7684;&#x7075;&#x6D3B;&#x6027;&#xFF0C;
+&#x53C8;&#x6709; C/C++ &#x7B49;&#x7CFB;&#x7EDF;&#x8BED;&#x8A00;&#x7684;&#x6548;&#x7387;&#x3002;&#x4F7F;&#x7528; V8 &#x5F15;&#x64CE;&#xFF0C;&#x53EF;&#x4EE5;&#x5F88;&#x65B9;&#x4FBF;&#x7684;&#x5C06; C++ &#x7C7B;&#x201D;&#x5305;&#x88C5;&#x201D;&#x6210;&#x53EF;&#x4F9B; JavaScript &#x4F7F;&#x7528;&#x7684;&#x8D44;&#x6E90;&#x3002;</p>
+<p>&#x6211;&#x4EEC;&#x8FD9;&#x91CC;&#x4E3E;&#x4E00;&#x4E2A;&#x8F83;&#x4E3A;&#x7B80;&#x5355;&#x7684;&#x4F8B;&#x5B50;&#xFF0C;&#x5B9A;&#x4E49;&#x4E00;&#x4E2A; Person &#x7C7B;&#xFF0C;&#x7136;&#x540E;&#x5C06;&#x8FD9;&#x4E2A;&#x7C7B;&#x5305;&#x88C5;&#x5E76;&#x66B4;&#x9732;&#x7ED9; JavaScript &#x811A;&#x672C;&#xFF0C;&#x5728;&#x811A;&#x672C;&#x4E2D;&#x65B0;&#x5EFA; Person &#x7C7B;&#x7684;&#x5BF9;&#x8C61;&#xFF0C;&#x4F7F;&#x7528; Person &#x5BF9;&#x8C61;&#x7684;&#x65B9;&#x6CD5;&#x3002;
+&#x9996;&#x5148;&#xFF0C;&#x6211;&#x4EEC;&#x5728; C++ &#x4E2D;&#x5B9A;&#x4E49;&#x597D;&#x7C7B; Person&#xFF1A;</p>
+<pre><code class="lang-c++"><span class="hljs-keyword">class</span> Person { 
+ <span class="hljs-keyword">private</span>: 
+   <span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> age; 
+   <span class="hljs-keyword">char</span> name[<span class="hljs-number">512</span>]; 
+
+ <span class="hljs-keyword">public</span>: 
+   Person(<span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> age, <span class="hljs-keyword">char</span> *name) { 
+     <span class="hljs-keyword">this</span>-&gt;age = age; 
+     <span class="hljs-built_in">strncpy</span>(<span class="hljs-keyword">this</span>-&gt;name, name, <span class="hljs-keyword">sizeof</span>(<span class="hljs-keyword">this</span>-&gt;name)); 
+   } 
+
+   <span class="hljs-function"><span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> <span class="hljs-title">getAge</span><span class="hljs-params">()</span> </span>{ 
+     <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>-&gt;age; 
+   } 
+
+   <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">setAge</span><span class="hljs-params">(<span class="hljs-keyword">unsigned</span> <span class="hljs-keyword">int</span> nage)</span> </span>{ 
+     <span class="hljs-keyword">this</span>-&gt;age = nage; 
+   } 
+
+   <span class="hljs-function"><span class="hljs-keyword">char</span> *<span class="hljs-title">getName</span><span class="hljs-params">()</span> </span>{ 
+     <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>-&gt;name; 
+   } 
+
+   <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">setName</span><span class="hljs-params">(<span class="hljs-keyword">char</span> *nname)</span> </span>{ 
+     <span class="hljs-built_in">strncpy</span>(<span class="hljs-keyword">this</span>-&gt;name, nname, <span class="hljs-keyword">sizeof</span>(<span class="hljs-keyword">this</span>-&gt;name)); 
+   } 
+ };
+</code></pre>
+<p>Person &#x7C7B;&#x7684;&#x7ED3;&#x6784;&#x5F88;&#x7B80;&#x5355;&#xFF0C;&#x53EA;&#x5305;&#x542B;&#x4E24;&#x4E2A;&#x5B57;&#x6BB5; age &#x548C; name&#xFF0C;&#x5E76;&#x5B9A;&#x4E49;&#x4E86;&#x5404;&#x81EA;&#x7684; getter/setter. &#x7136;&#x540E;&#x6211;&#x4EEC;&#x6765;&#x5B9A;&#x4E49;&#x6784;&#x9020;&#x5668;&#x7684;&#x5305;&#x88C5;&#xFF1A;</p>
+<pre><code class="lang-c++">Handle&lt;Value&gt; PersonConstructor(<span class="hljs-keyword">const</span> Arguments&amp; args){ 
+   Handle&lt;Object&gt; object = args.This(); 
+   HandleScope handle_scope; 
+   <span class="hljs-keyword">int</span> age = args[<span class="hljs-number">0</span>]-&gt;Uint32Value(); 
+
+   String::<span class="hljs-function">Utf8Value <span class="hljs-title">str</span><span class="hljs-params">(args[<span class="hljs-number">1</span>])</span></span>; 
+   <span class="hljs-keyword">char</span>* name = ToCString(str); 
+
+   Person *person = <span class="hljs-keyword">new</span> Person(age, name); 
+   object-&gt;SetInternalField(<span class="hljs-number">0</span>, External::New(person)); 
+   <span class="hljs-keyword">return</span> object; 
+ }
+</code></pre>
+<p>&#x4ECE;&#x51FD;&#x6570;&#x539F;&#x578B;&#x4E0A;&#x53EF;&#x4EE5;&#x770B;&#x51FA;&#xFF0C;&#x6784;&#x9020;&#x5668;&#x7684;&#x5305;&#x88C5;&#x4E0E;&#x4E0A;&#x4E00;&#x5C0F;&#x8282;&#x4E2D;&#xFF0C;&#x51FD;&#x6570;&#x7684;&#x5305;&#x88C5;&#x662F;&#x4E00;&#x81F4;&#x7684;&#xFF0C;&#x56E0;&#x4E3A;&#x6784;&#x9020;&#x51FD;&#x6570;&#x5728; V8 &#x770B;&#x6765;&#xFF0C;&#x4E5F;&#x662F;&#x4E00;&#x4E2A;&#x51FD;&#x6570;&#x3002;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;&#xFF0C;
+&#x4ECE; args &#x4E2D;&#x83B7;&#x53D6;&#x53C2;&#x6570;&#x5E76;&#x8F6C;&#x6362;&#x4E3A;&#x5408;&#x9002;&#x7684;&#x7C7B;&#x578B;&#x4E4B;&#x540E;&#xFF0C;&#x6211;&#x4EEC;&#x6839;&#x636E;&#x6B64;&#x53C2;&#x6570;&#x6765;&#x8C03;&#x7528; Person &#x7C7B;&#x5B9E;&#x9645;&#x7684;&#x6784;&#x9020;&#x51FD;&#x6570;&#xFF0C;&#x5E76;&#x5C06;&#x5176;&#x8BBE;&#x7F6E;&#x5728; object 
+&#x7684;&#x5185;&#x90E8;&#x5B57;&#x6BB5;&#x4E2D;&#x3002;&#x7D27;&#x63A5;&#x7740;&#xFF0C;&#x6211;&#x4EEC;&#x9700;&#x8981;&#x5305;&#x88C5; Person &#x7C7B;&#x7684; getter/setter&#xFF1A;</p>
+<pre><code class="lang-c++">Handle&lt;Value&gt; PersonGetAge(<span class="hljs-keyword">const</span> Arguments&amp; args){ 
+   Local&lt;Object&gt; self = args.Holder(); 
+   Local&lt;External&gt; wrap = Local&lt;External&gt;::Cast(self-&gt;GetInternalField(<span class="hljs-number">0</span>)); 
+
+   <span class="hljs-keyword">void</span> *ptr = wrap-&gt;Value(); 
+
+   <span class="hljs-keyword">return</span> Integer::New(<span class="hljs-keyword">static_cast</span>&lt;Person*&gt;(ptr)-&gt;getAge()); 
+ } 
+
+ Handle&lt;Value&gt; PersonSetAge(<span class="hljs-keyword">const</span> Arguments&amp; args) 
+ { 
+   Local&lt;Object&gt; self = args.Holder(); 
+   Local&lt;External&gt; wrap = Local&lt;External&gt;::Cast(self-&gt;GetInternalField(<span class="hljs-number">0</span>)); 
+
+   <span class="hljs-keyword">void</span>* ptr = wrap-&gt;Value(); 
+
+   <span class="hljs-keyword">static_cast</span>&lt;Person*&gt;(ptr)-&gt;setAge(args[<span class="hljs-number">0</span>]-&gt;Uint32Value()); 
+   <span class="hljs-keyword">return</span> Undefined(); 
+ }
+</code></pre>
+<p>&#x800C; getName &#x548C; setName &#x7684;&#x4E0E;&#x4E0A;&#x4F8B;&#x7C7B;&#x4F3C;&#x3002;&#x5728;&#x5BF9;&#x51FD;&#x6570;&#x5305;&#x88C5;&#x5B8C;&#x6210;&#x4E4B;&#x540E;&#xFF0C;&#x9700;&#x8981;&#x5C06; Person &#x7C7B;&#x66B4;&#x9732;&#x7ED9;&#x811A;&#x672C;&#x73AF;&#x5883;&#xFF1A;
+&#x9996;&#x5148;&#xFF0C;&#x521B;&#x5EFA;&#x4E00;&#x4E2A;&#x65B0;&#x7684;&#x51FD;&#x6570;&#x6A21;&#x677F;&#xFF0C;&#x5C06;&#x5176;&#x4E0E;&#x5B57;&#x7B26;&#x4E32;&#x201D;Person&#x201D;&#x7ED1;&#x5B9A;&#xFF0C;&#x5E76;&#x653E;&#x5165; global&#xFF1A;</p>
+<pre><code class="lang-c++"> Handle&lt;FunctionTemplate&gt; person_template = FunctionTemplate::New(PersonConstructor); 
+ person_template-&gt;SetClassName(String::New(<span class="hljs-string">&quot;Person&quot;</span>)); 
+ global-&gt;Set(String::New(<span class="hljs-string">&quot;Person&quot;</span>), person_template);
+</code></pre>
+<p>&#x7136;&#x540E;&#x5B9A;&#x4E49;&#x539F;&#x578B;&#x6A21;&#x677F;&#xFF1A;</p>
+<pre><code class="lang-c++"> Handle&lt;ObjectTemplate&gt; person_proto = person_template-&gt;PrototypeTemplate(); 
+
+ person_proto-&gt;Set(<span class="hljs-string">&quot;getAge&quot;</span>, FunctionTemplate::New(PersonGetAge)); 
+ person_proto-&gt;Set(<span class="hljs-string">&quot;setAge&quot;</span>, FunctionTemplate::New(PersonSetAge)); 
+
+ person_proto-&gt;Set(<span class="hljs-string">&quot;getName&quot;</span>, FunctionTemplate::New(PersonGetName)); 
+ person_proto-&gt;Set(<span class="hljs-string">&quot;setName&quot;</span>, FunctionTemplate::New(PersonSetName));
+</code></pre>
+<p>&#x6700;&#x540E;&#x8BBE;&#x7F6E;&#x5B9E;&#x4F8B;&#x6A21;&#x677F;&#xFF1A;</p>
+<pre><code class="lang-c++"> Handle&lt;ObjectTemplate&gt; person_inst = person_template-&gt;InstanceTemplate(); 
+ person_inst-&gt;SetInternalFieldCount(<span class="hljs-number">1</span>);
+</code></pre>
+<h3 id="c-&#x8C03;&#x7528;-js-&#x51FD;&#x6570;">C++ &#x8C03;&#x7528; JS &#x51FD;&#x6570;</h3>
+<p>&#x6211;&#x4EEC;&#x76F4;&#x63A5;&#x770B;&#x4E0B; src/timer_wrap.cc &#x7684;&#x4F8B;&#x5B50;&#xFF0C;V8 &#x7F16;&#x8BD1;&#x6267;&#x884C; timer.js, &#x6784;&#x9020;&#x4E86; Timer &#x5BF9;&#x8C61;&#x3002;</p>
+<pre><code class="lang-c++">static void OnTimeout(uv_timer_t* handle) {
+    TimerWrap* wrap = static_cast&lt;TimerWrap*&gt;(handle-&gt;data);
+    Environment* env = wrap-&gt;env();
+    HandleScope handle_scope(env-&gt;isolate());
+    Context::Scope context_scope(env-&gt;context());
+    wrap-&gt;MakeCallback(kOnTimeout, 0, nullptr);
+}
+
+inline v8::Local&lt;v8::Value&gt; AsyncWrap::MakeCallback(
+    uint32_t index,
+    int argc,
+    v8::Local&lt;v8::Value&gt;* argv) {
+  v8::Local&lt;v8::Value&gt; cb_v = object()-&gt;Get(index);
+  CHECK(cb_v-&gt;IsFunction());
+  return MakeCallback(cb_v.As&lt;v8::Function&gt;(), argc, argv);
+}
+</code></pre>
+<p><code>TimerWrap</code>&#x5BF9;&#x8C61;&#x901A;&#x8FC7;&#x6570;&#x7EC4;&#x7684;&#x7D22;&#x5F15;&#x5BFB;&#x5740;&#xFF0C;&#x627E;&#x5230; Timer &#x5BF9;&#x8C61;&#x7D22;&#x5F15;0&#x7684;&#x5BF9;&#x8C61;&#xFF0C;&#x800C;&#x5BF9;&#x5176;&#x8D4B;&#x503C;&#x7684;&#x662F;&#x5728; lib/timer.js &#x91CC;&#x9762;&#x7684;
+<code>list._timer[kOnTimeout] = listOnTimeout;</code> &#x3002;&#x8FD9;&#x8FB9;&#x627E;&#x5230;&#x7684;&#x5BF9;&#x8C61;&#x662F;&#x4E2A;<code>Function</code>,
+&#x540E;&#x9762;&#x5FFD;&#x7565; domains &#x5F02;&#x5E38;&#x5904;&#x7406;&#x7B49;&#xFF0C;&#x5C31;&#x662F;&#x7B80;&#x5355;&#x7684;&#x8C03;&#x7528; Function &#x5BF9;&#x8C61;&#x7684; Call &#x65B9;&#x6CD5;, &#x5E76;&#x4E14;&#x4F20;&#x4EBA;&#x4E0A;&#x6587;&#x63D0;&#x5230;&#x7684; Context &#x548C;&#x53C2;&#x6570;&#x3002;</p>
+<p><code>Local&lt;Value&gt; ret = callback-&gt;Call(recv, argc, argv);</code></p>
+<p>&#x8FD9;&#x5C31;&#x5B9E;&#x73B0;&#x4E86; C++&#x5BF9; JS&#x51FD;&#x6570;&#x7684;&#x8C03;&#x7528;&#x3002;</p>
+<h3 id="&#x603B;&#x7ED3;">&#x603B;&#x7ED3;</h3>
+<h3 id="&#x53C2;&#x8003;">&#x53C2;&#x8003;</h3>
+<ul>
+<li>[1]. <a href="https://www.ibm.com/developerworks/cn/opensource/os-cn-v8engine/" target="_blank">https://www.ibm.com/developerworks/cn/opensource/os-cn-v8engine/</a></li>
+<li>[2]. <a href="https://developers.google.com/v8/embed" target="_blank">https://developers.google.com/v8/embed</a></li>
+</ul>
 
                     
                     </section>
