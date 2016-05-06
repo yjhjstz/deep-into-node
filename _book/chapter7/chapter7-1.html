@@ -53,7 +53,7 @@
         data-chapter-title="Event"
         data-filepath="chapter7/chapter7-1.md"
         data-basepath=".."
-        data-revision="Thu May 05 2016 17:35:32 GMT+0800 (CST)"
+        data-revision="Fri May 06 2016 11:29:14 GMT+0800 (CST)"
         data-innerlanguage="">
     
 
@@ -173,7 +173,7 @@
                         
                             <b>2.1.</b>
                         
-                        V8 的一些概念
+                        V8 概念
                     </a>
             
             
@@ -187,6 +187,21 @@
                         <i class="fa fa-check"></i>
                         
                             <b>2.2.</b>
+                        
+                        C++和JS 交互
+                    </a>
+            
+            
+        </li>
+    
+        <li class="chapter " data-level="2.3" data-path="chapter2/chapter2-2.html">
+            
+                
+                    <a href="../chapter2/chapter2-2.html">
+                
+                        <i class="fa fa-check"></i>
+                        
+                            <b>2.3.</b>
                         
                         模块加载
                     </a>
@@ -698,6 +713,47 @@ help  Show repl options
 load  Load JS from a file into the REPL session
 save  Save all evaluated commands in this REPL session to a file
 </code></pre>
+<p>&#x6211;&#x4EEC;&#x770B;&#x4E0B;&#x4EE3;&#x7801;&#x5B9E;&#x73B0;&#xFF1A;</p>
+<pre><code class="lang-js"><span class="hljs-number">399</span>   self.on(<span class="hljs-string">&apos;line&apos;</span>, <span class="hljs-function"><span class="hljs-keyword">function</span>(<span class="hljs-params">cmd</span>) </span>{
+ <span class="hljs-number">400</span>     debug(<span class="hljs-string">&apos;line %j&apos;</span>, cmd);
+ <span class="hljs-number">401</span>     sawSIGINT = <span class="hljs-literal">false</span>;
+ <span class="hljs-number">402</span> 
+ <span class="hljs-number">403</span>     <span class="hljs-comment">// leading whitespaces in template literals should not be trimmed.</span>
+ <span class="hljs-number">404</span>     <span class="hljs-keyword">if</span> (self._inTemplateLiteral) {
+ <span class="hljs-number">405</span>       self._inTemplateLiteral = <span class="hljs-literal">false</span>;
+ <span class="hljs-number">406</span>     } <span class="hljs-keyword">else</span> {
+ <span class="hljs-number">407</span>       cmd = self.lineParser.parseLine(cmd);
+ <span class="hljs-number">408</span>     }
+ <span class="hljs-number">409</span> 
+ <span class="hljs-number">410</span>     <span class="hljs-comment">// Check to see if a REPL keyword was used. If it returns true,</span>
+ <span class="hljs-number">411</span>     <span class="hljs-comment">// display next prompt and return.</span>
+ <span class="hljs-number">412</span>     <span class="hljs-keyword">if</span> (cmd &amp;&amp; cmd.charAt(<span class="hljs-number">0</span>) === <span class="hljs-string">&apos;.&apos;</span> &amp;&amp; <span class="hljs-built_in">isNaN</span>(<span class="hljs-built_in">parseFloat</span>(cmd))) {
+ <span class="hljs-number">413</span>       <span class="hljs-keyword">var</span> matches = cmd.match(<span class="hljs-regexp">/^\.([^\s]+)\s*(.*)$/</span>);
+ <span class="hljs-number">414</span>       <span class="hljs-keyword">var</span> keyword = matches &amp;&amp; matches[<span class="hljs-number">1</span>];
+ <span class="hljs-number">415</span>       <span class="hljs-keyword">var</span> rest = matches &amp;&amp; matches[<span class="hljs-number">2</span>];
+ <span class="hljs-number">416</span>       <span class="hljs-keyword">if</span> (self.parseREPLKeyword(keyword, rest) === <span class="hljs-literal">true</span>) {
+ <span class="hljs-number">417</span>         <span class="hljs-keyword">return</span>;
+ <span class="hljs-number">418</span>       } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!self.bufferedCommand) {
+ <span class="hljs-number">419</span>         self.outputStream.write(<span class="hljs-string">&apos;Invalid REPL keyword\n&apos;</span>);
+ <span class="hljs-number">420</span>         finish(<span class="hljs-literal">null</span>);
+ <span class="hljs-number">421</span>         <span class="hljs-keyword">return</span>;
+ <span class="hljs-number">422</span>       }
+ <span class="hljs-number">423</span>     }
+ <span class="hljs-number">424</span>     ...
+ <span class="hljs-number">425</span>   }
+</code></pre>
+<ul>
+<li>L400&#xFF0C; &#x901A;&#x8FC7;&#x8BBE;&#x7F6E;&#x73AF;&#x5883;&#x53D8;&#x91CF;NODE_DEBUG=REPL&#x6253;&#x5F00;&#x8C03;&#x8BD5;&#x529F;&#x80FD;&#x3002;</li>
+<li>L407&#xFF0C; &#x89E3;&#x6790; cmd &#x8F93;&#x5165;&#xFF0C; &#x5904;&#x7406;&#x6B63;&#x5219;&#x7684;&#x60C5;&#x51B5;&#x3002;</li>
+<li>L412, &#x67E5;&#x770B;&#x662F;&#x5426;&#x4EE5; <code>.</code>&#x5F00;&#x5934;&#xFF0C;&#x5E76;&#x4E14;&#x4E0D;&#x662F;&#x6D6E;&#x70B9;&#x6570;&#xFF0C;&#x5219;&#x5229;&#x7528;&#x6B63;&#x5219;&#x5339;&#x914D;&#x5B57;&#x7B26;&#x4E32;&#xFF0C;<ul>
+<li>&#x4EE5; .help &#x4E3A;&#x4F8B;&#xFF0C;&#x5F97;&#x5230;&#x7684; <code>matches</code> &#x4E3A; <code>[ &apos;.help&apos;, &apos;help&apos;, &apos;&apos;, index: 0, input: &apos;.help&apos; ]</code>&#xFF0C;
+keyword &#x4E3A; help, rest &#x4E3A; &apos;&apos;.</li>
+</ul>
+</li>
+<li>L416, &#x901A;&#x8FC7; keyword &#x4ECE; commands &#x5BF9;&#x8C61;&#x627E;&#x5230;&#x5BF9;&#x5E94;&#x7684;&#x65B9;&#x6CD5;&#x6267;&#x884C;&#x3002;</li>
+</ul>
+<h4 id="repl&#x5B9E;&#x4F8B;">REPL&#x5B9E;&#x4F8B;</h4>
+<p>&#x4E00;&#x4E2A;&#x5728;curl(1)&#x4E0A;&#x8FD0;&#x884C;&#x7684;REPL&#x5B9E;&#x4F8B;&#x7684;&#x4F8B;&#x5B50;&#x53EF;&#x4EE5;&#x67E5;&#x770B;&#x8FD9;&#x91CC;&#xFF1A; <a href="https://gist.github.com/2053342" target="_blank">https://gist.github.com/2053342</a></p>
 <h3 id="&#x603B;&#x7ED3;">&#x603B;&#x7ED3;</h3>
 <p>Event &#x6A21;&#x5757;&#x662F;&#x89C2;&#x5BDF;&#x8005;&#x8BBE;&#x8BA1;&#x6A21;&#x5F0F;&#x7684;&#x5178;&#x578B;&#x5E94;&#x7528;&#x3002;&#x540C;&#x65F6;&#x4E5F;&#x662F;Reactive Programming&#x7684;&#x7CBE;&#x9AD3;&#x6240;&#x5728;&#x3002;</p>
 <h3 id="&#x53C2;&#x8003;">&#x53C2;&#x8003;</h3>
