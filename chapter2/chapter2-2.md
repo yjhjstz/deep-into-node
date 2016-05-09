@@ -13,13 +13,15 @@ npm世界最大的模块仓库，我们看几个数据：
 ###  模块加载准备操作
 严格来讲，Node里面分以下几种模块:
 
-builtin module: Node中以c++形式提供的模块，如tcp_wrap、contextify等
-constants module: Node中定义常量的模块，用来导出如signal, openssl库、文件访问权限等常量的定义。如文件访问权限中的O_RDONLY，O_CREAT、signal中的SIGHUP，SIGINT等。
-native module: Node中以JavaScript形式提供的模块，如http,https,fs等。有些native module需要借助于builtin module实现背后的功能。如对于native模块buffer ,还是需要借助builtin node_buffer.cc中提供的功能来实现大容量内存申请和管理，目的是能够脱离V8内存大小使用限制。
-3rd-party module: 以上模块可以统称Node内建模块，除此之外为第三方模块，典型的如express模块。
+* builtin module: Node中以c++形式提供的模块，如tcp_wrap、contextify等
+* constants module: Node中定义常量的模块，用来导出如signal, openssl库、文件访问权限等常量的定义。如文件访问权限中的O_RDONLY，O_CREAT、signal中的SIGHUP，SIGINT等。
+* native module: Node中以JavaScript形式提供的模块，如http,https,fs等。有些native module需要借助于builtin module实现背后的功能。如对于native模块buffer ,还是需要借助builtin node_buffer.cc中提供的功能来实现大容量内存申请和管理，目的是能够脱离V8内存大小使用限制。
+* 3rd-party module: 以上模块可以统称Node内建模块，除此之外为第三方模块，典型的如express模块。
 
 ### builtin module和native module生成过程
 ![](FgrfI3a1NyQLu0FoX76R5DbjdoL0.png)
+native JS module的生成过程相对复杂一点，把node的源代码下载下来，自己编译后，会在 out/Release/obj/
+gen目录下生成一个文件`node_natives.h`。
 
 该文件由js2c.py生成。 js2c.py会将node源代码中的lib目录下所有js文件以及src目录下的node.js文件中每一个字符转换成对应的ASCII码，并存放在相应的数组里面。
 
@@ -58,7 +60,7 @@ static const struct _native natives[] = {
 * 而对这两者的提取方式却不一样。对于JS模块，使用process.binding(“natives”)，而对于C++模块则直接用get_builtin_module()得到，这部分会在1.2节讲述。
 
 
-### v8 binding
+### module binding
 
 在node.cc里面提供了一个函数Binding()。当我们的应用或者node内建的模块调用require()来引用另一个模块时，背后的支撑者即是这里提到的Binding()函数。后面会讲述这个函数如何支撑require()的。这里先主要剖析这个函数。
 
@@ -128,7 +130,7 @@ static void Binding(const FunctionCallbackInfo<Value>& args) {
 对比上面三类模块导出的exports结构会发现对于每个属性，它们的值代表着完全不同的意义。对于builtin 模块而言，exports的TCP属性值代表着函数代码入口，对于constants模块，SIGHUP的属性值则代表一个数字，而对于native模块，_debugger的属性值则代表内存地址（准确说应该是 .rodata段地址）。
 
 
-#### 模块加载
+### 模块加载
 我们仍旧从`var http = require('http');`说起。
 
 require是怎么来的，为什么平白无故就能用呢，实际上都干了些什么？
@@ -144,7 +146,7 @@ Module.prototype.require = function(path) {
 };
 ```
 
-首先assert 模块进行简单的 path 变量的判断，需要传人的 `path`是一个 string 类型。
+首先 assert 模块进行简单的 path 变量的判断，需要传人的 `path`是一个 string 类型。
 
 ```js
 // Check the cache for the requested file.
@@ -266,9 +268,9 @@ NativeModule.getSource = function(id) {
 
 `wrap` 函数将 http.js 包裹起来, 交由`runInThisContext`编译源码，返回fn函数, 依次将参数传人。
 
-这样就成功加载了`native`模块, 标记 this.loaded = true;
 
-#### process
+
+### process
 先看看node.js的底层C++传递给javascript的一个变量process，在一开始运行node.js时，程序会先配置好process 
 `Handleprocess = SetupProcessObject(argc, argv);`
 * 然后把process作为参数去调用js主程序src/node.js返回的函数，这样process就传递到javascript里了。 
@@ -301,7 +303,7 @@ Local args[1] = { Local::New(process) };
 f->Call(global, 1, args);
 ```
 
-#### vm
+### vm
 `runInThisContext`又是怎么一回事呢？
 ```js
  var ContextifyScript = process.binding('contextify').ContextifyScript;
@@ -365,7 +367,13 @@ NODE_MODULE_CONTEXT_AWARE_BUILTIN(contextify, node::InitContextify);
 
 这样通过`env->SetProtoMethod(script_tmpl, "runInThisContext", RunInThisContext);`，绑定了『runInThisContext』 和 `RunInThisContext`.
 
+runInThisContext是将被包装后的源字符串转成可执行函数，（runInThisContext来自contextify 模块），runInThisContext的作用，类似eval，再执行这个被eval后的函数。
+
+这样就成功加载了`native`模块, 标记 this.loaded = true;
+
 #### 总结
+Node.js 通过 cache 解决无限循环引用的问题, 也是系统优化的重要手段，通过以空间换时间，使得每次加载模块变得非常高效。
+
 在实际的业务开发中，我们从堆的角度观察node启动模块后，缓存了大量的模块，包括第三份的模块，有的可能只加载使用一次。笔者觉得有必要有一种模块的卸载机制[1],
 可以降低对 V8堆内存的占用，从而提升后续垃圾回收的效率。
 
