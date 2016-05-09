@@ -82,7 +82,5 @@ adb shell chmod 755 /data/local/tmp/node
 
 
 
-### run on SuperPi
 
 
-### run in Docker
