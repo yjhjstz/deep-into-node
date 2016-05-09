@@ -24,8 +24,9 @@
 使用观察者模式更深层次的动机是，当我们需要维护相关对象的一致性的时候，我们可以避免对象之间的紧密耦合。例如，一个对象可以通知另外一个对象，而不需要知道这个对象的信息。
 
 ### Event.js 实现
-   
-#### 观察者存储
+EventEmitter 允许我们注册一个或多个函数作为 listeners。 在特定的事件触发时被调用。如下图：
+![](2016-05-09 14.13.19.png)
+#### listeners 存储
 一般观察者的设计模式的实现逻辑是类似的，都是有一个类似map的结构，存储监听事件和回调函数的对应关系。
 ```js
 // This constructor is used to store event handlers. Instantiating this is
@@ -371,6 +372,16 @@ save  Save all evaluated commands in this REPL session to a file
 
 #### REPL实例
 一个在curl(1)上运行的REPL实例的例子可以查看这里： https://gist.github.com/2053342
+
+
+
+### EventEmitter vs Callbacks
+- EventEmitter
+  - 可以通知多个listeners
+  - 一般被调用多次。
+- Callback
+  - 最多通知一个listener
+  - 通常被调用一次，无论操作是成功还是失败。
 
 ### 总结
 Event 模块是观察者设计模式的典型应用。同时也是Reactive Programming的精髓所在。
