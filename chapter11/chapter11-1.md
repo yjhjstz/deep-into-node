@@ -44,12 +44,47 @@ fs模块是文件操作的封装，它提供了文件的读取、写入、更名
 ### 文件系统之高级读写
 #### 文件映射 mmap
 
+`man 2 mmap` 查看：
 
-#### 离散IO writev
+```shell
+#include <sys/mman.h>
 
-### 同步 IO
+void *
+  mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset);
+
+```
+通过mmap系统调用，把一个文件映射到进程虚拟址址空间上。也就是说磁盘上的文件，现在在在系统看来是一个内存数组了，这样应用程序访问文件就不需要系统IO调用，而是直接读取内存。
+
+调用mmap时，文件数据并不会马上读取内存，还是在实际需要时，才会按需调度进内核。这就不得不提到写时复制技术(COW)。
 
 
-### 异步 IO
+#### 离散IO 
+readv和writev函数让我们在单个函数调用里从多个不连续的缓冲里读入或写出。这些操作被称为分散读（scatter read）和集合写（gather write）。
 
+```shell
+
+#include <sys/uio.h>
+
+ssize_t readv(int filedes, const struct iovec *iov, int iovcnt);
+
+ssize_t writev(int filedes, const struct iovec *iov, int iovcnt);
+
+两者都返回读或写的字节数，错误返回-1。
+```
+这两个函数的第二个参数是指向iovec结构数组的一个指针：
+```c++
+struct iovec {
+  void   *iov_base;      /* starting address of buffer */
+  size_t iov_len;        /* size of buffer */
+};
+```
+iov数组中的元素数由iovcnt说明。其最大值受限于IOV_MAX。
+![](14fig27.gif)
+
+writev以顺序iov[0]，iov[1]至iov[iovcnt-1]从缓冲区中聚集输出数据。writev返回输出的字节总数，通常，它应等于所有缓冲区长度之和。
+
+readv则将读入的数据按上述同样顺序散布到缓冲区中。readv总是先填满一个缓冲区，然后再填写下一个。readv返回读到的总字节数。如果遇到文件结尾，已无数据可读，则返回0。
+
+
+### 总结
 
