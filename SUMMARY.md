@@ -20,6 +20,7 @@
   * [文件抽象](chapter11/chapter11-1.md)
   * [IO 那些事儿](chapter11/chapter11-3.md)
   * [libuv 选型](chapter11/chapter11-4.md)
+  * [文件 IO](chapter11/chapter11-5.md)
 * [Global对象](chapter12/chapter12-1.md)
 * [子进程](chapter13/chapter13-1.md)
 * [Chapter14](chapter14/README.md)
