@@ -46,22 +46,29 @@ fs模块是文件操作的封装，它提供了文件的读取、写入、更名
 
 `man 2 mmap` 查看：
 
-```shell
+```c++
+
 #include <sys/mman.h>
 
-void *
-  mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset);
+void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset);
 
 ```
 通过mmap系统调用，把一个文件映射到进程虚拟址址空间上。也就是说磁盘上的文件，现在在在系统看来是一个内存数组了，这样应用程序访问文件就不需要系统IO调用，而是直接读取内存。
 
-调用mmap时，文件数据并不会马上读取内存，还是在实际需要时，才会按需调度进内核。这就不得不提到写时复制技术(COW)。
+#### 优点： 
+* 1、从内存映像文件中读写，避免了read、write多余的拷贝。 
+* 2、从内存映像文件中读写，避免了多余的系统调用和用户-内核模式的切换 
+* 3、可以多个进程共享内存映像文件。
+
+#### 缺点： 
+* 1、内存映像需要时整数倍页大小，如果文件较小，会浪费内存。 
+* 2、内存映像需要在放在进程地址空间，大的内存映像可能导致地址空间碎片，找不到足够大的空余连续区域供其它用。 
 
 
 #### 离散IO 
 readv和writev函数让我们在单个函数调用里从多个不连续的缓冲里读入或写出。这些操作被称为分散读（scatter read）和集合写（gather write）。
 
-```shell
+```c++
 
 #include <sys/uio.h>
 

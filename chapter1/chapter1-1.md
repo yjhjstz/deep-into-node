@@ -32,5 +32,5 @@ node.js最初开始于2009年，是一个可以让Javascript代码离开浏览�
 
 ### 参考
 
-[1]. http://luohaha.github.io/Chinese-uvbook/
-[2]. https://github.com/libuv/libuv/issues/461
+- [1]. http://luohaha.github.io/Chinese-uvbook/
+- [2]. https://github.com/libuv/libuv/issues/461

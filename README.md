@@ -21,7 +21,7 @@ Node.js 的源码分析，基于 v6.0.0.
 
 - 联系作者 @江凌 微博：http://weibo.com/yangjianghua 
 
-- 邮箱：yjhjstz#gmail.com， 博客：alinode.aliyun.com
+- 邮箱：yjhjstz#gmail.com， 博客：http://alinode.aliyun.com
 
 本书尚在撰写中，欢迎读者讨论https://github.com/yjhjstz/deep-into-node/issues
 
