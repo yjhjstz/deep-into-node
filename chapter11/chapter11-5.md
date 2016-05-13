@@ -50,7 +50,14 @@ class FSReqWrap: public ReqWrap<uv_fs_t> {
 
 ```
 FSReqWrap 继承 ReqWrap<uv_fs_t>, ReqWrap 是个模板类，`T req_;` 存储了不同类型的请求，在这里
-模板编译后，`uv_fs_t req_;`, req_ 存储了 uv_fs_t 请求对象。
+模板编译后，`uv_fs_t req_;`, req_ 存储了 uv_fs_t 请求对象。 这源自于一次性能优化的提交。
+> fs: improve `readFile` performance
+    
+> This commit improves `readFile` performance by
+> reducing number of closure allocations and using
+> `FSReqWrap` directly.
+
+具体了解, https://github.com/iojs/io.js/pull/718 。
 
 
 在js 层发起请求后，会来到C++绑定层，
