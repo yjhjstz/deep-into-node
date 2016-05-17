@@ -136,7 +136,7 @@ send方法可以发送的对象包括如下集中：
 
 
 ### 总结
-很多应用比如 redis提供了本地访问的接口，进程通信使用的是 socket 的回环地址。其他可以用 unix domain socket
+很多应用比如 redis提供了本地访问的接口，进程通信使用的是 socket 的回环地址。当然它是通用性的考虑，否则要区分本地环境还是网络环境，如果不考虑这点，其实可以用 unix domain socket
 代替，以获取更好的相互性能。
 
 > Here you have the results on a single CPU 3.3GHz Linux machine :
