@@ -33,3 +33,69 @@ node.js中不可能在最外层定义变量，因为所有的用户代码都是�
 * _dirname：指向当前运行的脚本所在的目录。
 除此之外，还有一些对象实际上是模块内部的局部变量，指向的对象根据模块不同而不同，但是所有模块都适用，可以看作是伪全局变量，主要为module, module.exports, exports等。
 
+### module.exports vs exports
+
+如果想不借助global，在不同模块之间共享代码，就需要用到exports属性。令人有些迷惑的是，在node.js里，还有另外一个属性，是module.exports。一般情况下，这2个属性的作用是一致的，但是如果对exports或者module.exports赋值的话，又会呈现出令人奇怪的结果。
+
+
+首先，exports和module.exports都是某个对象的引用（reference），初始情况下，它们指向同一个object，如果不修改module.exports的引用的话，这个object稍后会被导出。
+```shell
+  exports  module.exports
+    |         /
+    |        /
+    V       V
+     Object
+```
+
+所以如果只是给对象添加属性，不改变exports和module.exports的引用目标的话，是完全没有问题的。
+
+但是有时候，希望导出的是一个构造函数，那么一般会这么写：
+```js
+// b.js
+module.exports = function (name, age) {
+    this.name = name;
+    this.age = age;
+}
+
+exports.sex = "male";
+```
+```js
+var Person = require("./b");
+var person = new Person("Tony", 33);
+console.log(person); // {name:"Tony", age:33}
+console.log(Person.sex); // undefined
+```
+这个sex属性不会导出，因为引用关系已经改变：
+```shell
+  exports  module.exports
+    |          |
+    |          |
+    V          V
+   function   Object
+```
+
+而node.js导出的，永远是module。exports指向的对象，在这里就是function。所以exports指向的那个object，现在已经不会被导出了，为其增加的属性当然也就没用了。
+
+
+如果希望把sex属性也导出，就需要这样写：
+```js
+exports = module.exports = function (name, age) {
+    this.name = name;
+    this.age = age;
+}
+
+exports.sex = "male";
+```
+
+
+
+
+### 总结
+
+* node.js 设计的2个导出引用的对象，反而增加了迷惑性。
+* 避免污染全局空间。
+
+
+### 参考
+
+
