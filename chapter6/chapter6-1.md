@@ -97,7 +97,39 @@ console.log(buf2.toString('ascii', 0, 25));
 
 当然存在更高效，更省内存的内存管理分配，比如 tcmalloc, 但也必须承受一定的管理代价。node.js 在这方面并没有一味的执着于此，而是达到一种性能与空间使用的平衡。
 
+### zero fill
 
+Node.js 在v5.10.0 加入了命令行选项 `--zero-fill-buffers`, 强制在申请 `Buffer`时用0填充分配的内存。
+
+为什么要引入这个特性呢？
+
+- 防止你代码中本该初始化的地方没有初始化；
+- 防止其他代码访问到你之前写入 Buffer 的数据， 这边存在安全隐患, 如下
+```js
+✗ node -p "new Buffer(1024).toString('ascii')"
+`7(@ P
+xn?_k7x0x0' @#k
+              :ArrayBuffer kh
+                             &7;?m@bFn?_ @`` n?0'h2R'Lq083~C[e;@string k (R!~!H3kl
+ ```
+
+代码实现上则是通过 `--zero-fill-buffers` 区分申请内存是用 `malloc()`或者 `calloc()`。
+
+当然性能上 `calloc()` 还是差很多，所以社区开放了一个选项，而不是默认开启。
+
+
+* here are benchmark results for allocating a 1mb Buffer:
+
+
+
+ xxx | v5.4.0	| v4.2.3 |	v0.12.9	| v0.10.41
+ --- | --------  | -------| ---------|---------
+new Buffer | 41,515 ops/sec ±3.00% | 43,670 ops/sec ±1.86% | 53,969 ops/sec ±1.41% | 147,350 ops/sec ±1.82% 
+new Buffer (zero-filled) | 5,041 ops/sec ±2.00% | 4,293 ops/sec ±1.79% | 7,953 ops/sec ±0.55% | 8,167 ops/sec ±2.38% 
+
+
+
+> 具体了解：https://github.com/nodejs/node/issues/4660 
 
 ### 总结
 Buffer是一个典型的Javascript和C++结合的模块，性能相关部分用C++实现，非性能相关部分用javascript实现。
@@ -110,5 +142,5 @@ Buffer内存分配，Buffer对象的内存分配不是在V8的堆内存中，在
 
 ### 参考
 
-
+* https://nodesource.com/blog/nsolid-deepdive-into-security-policies-zero-fill-buffer-allocations/
 
