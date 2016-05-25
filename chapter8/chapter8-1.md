@@ -329,19 +329,34 @@ Readable流可以产出数据，你可以将这些数据传送到一个writable�
 
 如果你想要等待缓存情况，可以监听`drain`事件。  
 
+
+
+### duplex流 
+
+
+Duplex流是一个可读也可写的流，全双工。 如图：
+![](http://3.bp.blogspot.com/-hWPHqV9RJlM/VnrEyChmtnI/AAAAAAAABpQ/uTnbBCU87ek/s1600/duplex.PNG)
+
+代码实现上：
+```js
+const Readable = require('_stream_readable');
+const Writable = require('_stream_writable');
+
+util.inherits(Duplex, Readable);
+
+var keys = Object.keys(Writable.prototype);
+for (var v = 0; v < keys.length; v++) {
+  var method = keys[v];
+  if (!Duplex.prototype[method])
+    Duplex.prototype[method] = Writable.prototype[method];
+}
+```
+`Duplex` 首先继承了 `Readable`, 因为 javascript 没有 C++的多重继承的特性，所以
+遍历 `Writable`的原型方法然后赋值到 `Duplex`的原型上。
+
 ### transform流  
 
 你可以将transform流想象成一个流的中间部分，它可以读也可写，但是并不保存数据，它只负责处理流经它的数据。  
-
-### duplex流  
-
-Duplex流是一个可读也可写的流，全双工。一个rpc交换是一个duplex流的最好的例子。如果你看到过下面这样的代码：	
-	
-	a.pipe(b).pipe(a)
-
-那么你需要处理的就是一个duplex流对象。
-
-
 
 ### 总结
 
