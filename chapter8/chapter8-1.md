@@ -363,10 +363,16 @@ for (var v = 0; v < keys.length; v++) {
 遍历 `Writable`的原型方法然后赋值到 `Duplex`的原型上。
 
 ### transform流  
+转换流（Transform streams）是一种输出由输入计算所得的双工流。它同时实现了 Readable 和 Writable 接口。
+
+Node中的转换流有：
+* zlib streams
+* crypto streams
 
 你可以将transform流想象成一个流的中间部分，它可以读也可写，但是并不保存数据，它只负责处理流经它的数据。  
 
 ### 总结
+流式处理的优势: 将功能切分，并通过管道组合。
 
 
 ### 参考
