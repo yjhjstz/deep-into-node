@@ -101,7 +101,7 @@ void TCPWrap::Initialize(Local<Object> target,
 ```
 `TCPWrap`导出了 TCP 类，TCPConnectWrap 类，并且我们看到对 IPV6协议族的支持：`bind6`, `connect6`。
 
-#### Javacript Socket
+#### TCP Socket
 Node.js 的 Net模块也对 TCP socket 进行了抽象封装：
 ```js
 function Socket(options) {
@@ -169,6 +169,43 @@ TCP粘包通常在流传输中出现，UDP则不会出现粘包，因为UDP有�
 * 自定义应用层协议；
 * 不使用Nagle算法, 使用提供的 API：`socket.setNoDelay`。
 
+
+### UDP
+#### 组播
+* https://en.wikipedia.org/wiki/Multicast#IP_multicast%EF%BC%89%EF%BC%8C%E5%85%B7
+
+#### UDP Socket
+```js
+function Socket(type, listener) {
+  EventEmitter.call(this);
+
+  if (typeof type === 'object') {
+    var options = type;
+    type = options.type;
+  }
+
+  var handle = newHandle(type);
+  handle.owner = this;
+
+  this._handle = handle;
+  this._receiving = false;
+  this._bindState = BIND_STATE_UNBOUND;
+  this.type = type;
+  this.fd = null; // compatibility hack
+
+  // If true - UV_UDP_REUSEADDR flag will be set
+  this._reuseAddr = options && options.reuseAddr;
+
+  if (typeof listener === 'function')
+    this.on('message', listener);
+}
+util.inherits(Socket, EventEmitter);
+```
+
+UDP 继承了 `EventEmitter`, 同样也支持 IPV4和 IPV6协议， 由`type`区分，
+`this._reuseAddr` 标识是否要使用选项：`SO_REUSEADDR`。
+
+SO_REUSEADDR允许完全重复的捆绑：当一个IP地址和端口绑定到某个套接口上时，还允许此IP地址和端口捆绑到另一个套接口上。一般来说，这个特性仅在支持多播的系统上才有，而且只对UDP套接口而言（TCP不支持多播）。
 
 ### 总结
 
