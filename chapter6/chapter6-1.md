@@ -44,6 +44,7 @@ this.offset = pool.used;
 pool.used += this.length;
 ```
 
+另外在 lib/_tls_legacy.js 中， `SlabBuffer` 创建了一个 10MB 的 slab。
 
 ### 浅拷贝
 Buffer更像是可以做指针操作的C语言数组。例如，可以用[index]方式直接修改某个位置的字节。
