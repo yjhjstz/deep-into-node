@@ -1,5 +1,5 @@
 
-## HTTP
+## HTTP 1/2
 
 回到我们之前的 「Hello World」例子, 短短数行即可。
 ```js
