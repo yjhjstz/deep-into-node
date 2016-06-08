@@ -44,7 +44,25 @@ this.offset = pool.used;
 pool.used += this.length;
 ```
 
-另外在 lib/_tls_legacy.js 中， `SlabBuffer` 创建了一个 10MB 的 slab。
+PS: 在 lib/_tls_legacy.js 中， `SlabBuffer` 创建了一个 10MB 的 slab。
+
+```js
+function alignPool() {
+  // Ensure aligned slices
+  if (poolOffset & 0x7) {
+   poolOffset |= 0x7;
+   poolOffset++;
+  }
+}
+```
+这里做了8字节的内存对齐处理。
+* 如果不按照平台要求对数据存放进行对齐，会带来存取效率上的损失。比如32位的Intel处理器通过总线访问(包括读和写)内存数据。每个总线周期从偶地址开始访问32位内存数据，内存数据以字节为单位存放。如果一个32位的数据没有存放在4字节整除的内存地址处，那么处理器就需要2个总线周期对其进行访问，显然访问效率下降很多。 
+
+* Node.js 是一个跨平台的语言，第三方的C++ addon 也是非常多，避免破坏了第三方模块的使用，比如 directIO 就必须要内存对齐。
+
+* 兼容 node.js v0.10
+
+> 详细：https://github.com/nodejs/node/pull/2487
 
 ### 浅拷贝
 Buffer更像是可以做指针操作的C语言数组。例如，可以用[index]方式直接修改某个位置的字节。
