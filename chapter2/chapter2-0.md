@@ -111,3 +111,4 @@ V8采用了标记指针法：这种方法需要在每个指针的末位预留一
 
 ### 参考
 [1]. https://developers.google.com/v8/get_started
+[2]. https://developers.google.com/v8/embed
