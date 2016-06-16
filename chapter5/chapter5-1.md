@@ -65,13 +65,99 @@ more用来标识是否进行下一轮循环。 env->event_loop()会返回之前�
 
 ### process.nextTick
 ![](settimeout.jpeg)
-带着这个问题，我们看看 JS 层的 LOOP 是怎样的。
+带着这个问题，我们看看 JS 层的 nextTick 是怎么被驱动。
+
+在入口点 `src/node.js`, `processNextTick` 方法构建了 `process.nextTick` API。
+
+`process._tickCallback ` 作为 nexttick 的回调函数，挂到了 `process` 对象上，由 C++层面回调使用。
+
+```js
+startup.processNextTick = function() {
+    var nextTickQueue = [];
+    var pendingUnhandledRejections = [];
+    var microtasksScheduled = false;
+
+    // Used to run V8's micro task queue.
+    var _runMicrotasks = {};
+
+    // *Must* match Environment::TickInfo::Fields in src/env.h.
+    var kIndex = 0;
+    var kLength = 1;
+
+    process.nextTick = nextTick;
+    // Needs to be accessible from beyond this scope.
+    process._tickCallback = _tickCallback;
+    process._tickDomainCallback = _tickDomainCallback;
+
+    // This tickInfo thing is used so that the C++ code in src/node.cc
+    // can have easy access to our nextTick state, and avoid unnecessary
+    // calls into JS land.
+    const tickInfo = process._setupNextTick(_tickCallback, _runMicrotasks);
+    // 省略...
+}
+```
+通过 `process._setupNextTick` 注册 `_tickCallback` 到 `env` 的 `tick_callback_function` 上。
+
+
+在 `src/async_wrap.cc` 文件中，我们发现对其的调用如下：
+```js
+Local<Value> AsyncWrap::MakeCallback(const Local<Function> cb,
+                                      int argc,
+                                      Local<Value>* argv) {
+  // ...
+  Environment::TickInfo* tick_info = env()->tick_info();
+
+  if (tick_info->in_tick()) {
+    return ret;
+  }
+
+  if (tick_info->length() == 0) {
+    env()->isolate()->RunMicrotasks();
+  }
+
+  if (tick_info->length() == 0) {
+    tick_info->set_index(0);
+    return ret;
+  }
+
+  tick_info->set_in_tick(true);
+
+  env()->tick_callback_function()->Call(process, 0, nullptr);
+
+  tick_info->set_in_tick(false);
+  // ...
+```
+
+
+当无 `nextTick`任务时，`env()->isolate()->RunMicrotasks();`会驱动 `Promise` 任务执行。
+
+否则会调用 `tick_callback_function` ,也就是 `_tickCallback`。
+
+看到这里我也有个疑问，如果没有异步 IO 呢，怎么驱动呢？
+
+我们来到 `lib/module.js`, 如下
+
+```js
+// bootstrap main module.
+Module.runMain = function() {
+  // Load the main module--the command line argument.
+  Module._load(process.argv[1], null, true);
+  // Handle any nextTicks added in the first tick of the program
+  process._tickCallback();
+};
+```
+
+`Module._load` 加载主脚本后，就调用 `_tickCallback`, 处理第一次的 tick 了。
+
+所以上面的疑问有了答案，`nextTick` 主要在 `uv__io_poll` 驱动。为什么说主要呢? 因为还
+可能在 Timer模块驱动，具体细节留给读者去研究啦。
+
 
 ### 总结
 
 
 ### 参考
-
+* http://acemood.github.io/2016/02/01/event-loop-in-javascript/
 
 
 
