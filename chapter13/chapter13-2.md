@@ -62,7 +62,82 @@ function Domain() {
 }
 ```
 
+另外， domain 为了支持深层次的嵌套， 提供了 `Domain#enter` 和 `Domain#exit` 的 API。
+先来看 `enter`的实现，
+```js
+Domain.prototype.enter = function() {
+  if (this._disposed) return;
 
+  // note that this might be a no-op, but we still need
+  // to push it onto the stack so that we can pop it later.
+  exports.active = process.domain = this;
+  stack.push(this);
+  _domain_flag[0] = stack.length;
+};
+```
+设置当前活跃的 `domain`, 并且为了便于回溯，将当前的 `domain` 加入到队列的后面，更新栈的深度。
+
+再看 `exit`实现，
+```js
+Domain.prototype.exit = function() {
+  // skip disposed domains, as usual, but also don't do anything if this
+  // domain is not on the stack.
+  var index = stack.lastIndexOf(this);
+  if (this._disposed || index === -1) return;
+
+  // exit all domains until this one.
+  stack.splice(index);
+  _domain_flag[0] = stack.length;
+
+  exports.active = stack[stack.length - 1];
+  process.domain = exports.active;
+};
+```
+相反的， 退出当前的 `domain`, 更新长度，设置当前活跃的 `domain`。
+
+读者可能好奇，我并没有显式地调用 `enter`, `exit`, 而只是简单的创建了一个 domain, 怎么会达到这种效果？
+
+读者可以看看 `AsyncWrap::MakeCallback()`, 每次C++ --> JS, 都会检查 domain, 如果使用，则会显式地调用他们。
+其他地方读者可以自行寻找。
+
+为了解决不在当前作用域的异常处理， Domain 也提供 `Domain#add` 和 `Domain#remove` 来增加 `emitter` 或者
+`Timer`。
+
+
+回到事件的根本， 什么时候触发domain的error事件？
+```js
+process._fatalException = function(er) {
+      var caught;
+
+      if (process.domain && process.domain._errorHandler)
+        caught = process.domain._errorHandler(er) || caught;
+
+      if (!caught)
+        caught = process.emit('uncaughtException', er);
+
+      // If someone handled it, then great.  otherwise, die in C++ land
+      // since that means that we'll exit the process, emit the 'exit' event
+      if (!caught) {
+        try {
+          if (!process._exiting) {
+            process._exiting = true;
+            process.emit('exit', 1);
+          }
+        } catch (er) {
+          // nothing to be done about it at this point.
+        }
+
+      // if we handled an error, then make sure any ticks get processed
+      } else {
+        NativeModule.require('timers').setImmediate(process._tickCallback);
+      }
+
+      return caught;
+    };
+```
+
+如果当前 process 使用了 domain, 也是就 `process.domain` 不为空，就调用 `_errorHandler` 来处理，
+当前也存在没有处理的情况，职责链来到 process， process 则触发 `uncaughtException` 事件。
  
 
 ### 总结
