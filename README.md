@@ -25,7 +25,7 @@ Node.js 的源码分析，基于node v6.0.0。
 
 本书尚在撰写中，欢迎读者讨论https://github.com/yjhjstz/deep-into-node/issues
 
-**如果您觉得还不错, 请我喝杯咖啡，欢迎Star** 
+**如果您觉得还不错, 请我喝杯咖啡，欢迎Star,  提交PR** 
 
 ![zhi](alipay.jpg)
 
