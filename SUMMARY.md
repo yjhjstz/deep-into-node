@@ -10,6 +10,7 @@
 * [Global对象](chapter12/chapter12-1.md)
 * [事件循环](chapter5/chapter5-1.md)
 * [Timer 解读](chapter3/chapter3-1.md)
+* [Yield 魔法](chapter3/chapter3-2.md)
 * [Buffer](chapter6/chapter6-1.md)
 * [Event](chapter7/chapter7-1.md)
 * [Domain](chapter13/chapter13-2.md)
