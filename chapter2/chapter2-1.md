@@ -5,7 +5,8 @@
 ### 数据及模板
 由于 C++ 原生数据类型与 JavaScript 中数据类型有很大差异，因此 V8 提供了 Value 类，从 JavaScript 到 C++，从 C++ 到 JavaScrpt 都会用到这个类及其子类，比如：
 ```c++
-Handle<Value> Add(const Arguments& args){int a = args[0]->Uint32Value(); 
+Handle<Value> Add(const Arguments& args){
+   int a = args[0]->Uint32Value(); 
    int b = args[1]->Uint32Value(); 
 
    return Integer::New(a+b); 
@@ -26,13 +27,12 @@ ObjectTemplate，可以将 C++ 中的对象暴露给脚本环境，类似的，F
 ```c++
 static char sname[512] = {0}; 
 
- static Handle<Value> NameGetter(Local<String> name, 
-     const AccessorInfo& info) {return String::New((char*)&sname,strlen((char*)&sname)); 
+ static Handle<Value> NameGetter(Local<String> name, const AccessorInfo& info) {
+    return String::New((char*)&sname,strlen((char*)&sname)); 
  } 
 
- static void NameSetter(Local<String> name, 
-     Local<Value> value, 
-     const AccessorInfo& info) {Local<String> str = value->ToString(); 
+ static void NameSetter(Local<String> name, Local<Value> value, const AccessorInfo& info) {
+   Local<String> str = value->ToString(); 
    str->WriteAscii((char*)&sname); 
  }
 ```
@@ -70,26 +70,32 @@ class Person {
    char name[512]; 
 
  public: 
-   Person(unsigned int age, char *name) {this->age = age; 
+   Person(unsigned int age, char *name) {
+     this->age = age; 
      strncpy(this->name, name, sizeof(this->name)); 
    } 
 
-   unsigned int getAge() {return this->age; 
+   unsigned int getAge() {
+     return this->age;
    } 
 
-   void setAge(unsigned int nage) {this->age = nage; 
+   void setAge(unsigned int nage) {
+     this->age = nage;
    } 
 
-   char *getName() {return this->name; 
+   char *getName() {
+     return this->name;
    } 
 
-   void setName(char *nname) {strncpy(this->name, nname, sizeof(this->name)); 
+   void setName(char *nname) {
+     strncpy(this->name, nname, sizeof(this->name));
    } 
  };
 ```
 Person 类的结构很简单，只包含两个字段 age 和 name，并定义了各自的 getter/setter. 然后我们来定义构造器的包装：
 ```c++
-Handle<Value> PersonConstructor(const Arguments& args){Handle<Object> object = args.This(); 
+Handle<Value> PersonConstructor(const Arguments& args){
+   Handle<Object> object = args.This(); 
    HandleScope handle_scope; 
    int age = args[0]->Uint32Value(); 
 
@@ -105,7 +111,8 @@ Handle<Value> PersonConstructor(const Arguments& args){Handle<Object> object = a
 从 args 中获取参数并转换为合适的类型之后，我们根据此参数来调用 Person 类实际的构造函数，并将其设置在 object 
 的内部字段中。紧接着，我们需要包装 Person 类的 getter/setter：
 ```c++
-Handle<Value> PersonGetAge(const Arguments& args){Local<Object> self = args.Holder(); 
+ Handle<Value> PersonGetAge(const Arguments& args){
+   Local<Object> self = args.Holder(); 
    Local<External> wrap = Local<External>::Cast(self->GetInternalField(0)); 
 
    void *ptr = wrap->Value(); 
@@ -113,14 +120,15 @@ Handle<Value> PersonGetAge(const Arguments& args){Local<Object> self = args.Hold
    return Integer::New(static_cast<Person*>(ptr)->getAge()); 
  } 
 
- Handle<Value> PersonSetAge(const Arguments& args) 
- {Local<Object> self = args.Holder(); 
+ Handle<Value> PersonSetAge(const Arguments& args) {
+   Local<Object> self = args.Holder(); 
    Local<External> wrap = Local<External>::Cast(self->GetInternalField(0)); 
 
    void* ptr = wrap->Value(); 
 
    static_cast<Person*>(ptr)->setAge(args[0]->Uint32Value()); 
-   return Undefined();}
+   return Undefined();
+ }
  ```
 而 getName 和 setName 的与上例类似。在对函数包装完成之后，需要将 Person 类暴露给脚本环境：
 首先，创建一个新的函数模板，将其与字符串”Person” 绑定，并放入 global：
@@ -149,19 +157,18 @@ Handle<Value> PersonGetAge(const Arguments& args){Local<Object> self = args.Hold
 我们直接看下 src/timer_wrap.cc 的例子，V8 编译执行 timer.js, 构造了 Timer 对象。
 
 ```c++
-static void OnTimeout(uv_timer_t* handle) {TimerWrap* wrap = static_cast<TimerWrap*>(handle->data);
+static void OnTimeout(uv_timer_t* handle) {
+    TimerWrap* wrap = static_cast<TimerWrap*>(handle->data);
     Environment* env = wrap->env();
     HandleScope handle_scope(env->isolate());
     Context::Scope context_scope(env->context());
     wrap->MakeCallback(kOnTimeout, 0, nullptr);
 }
 
-inline v8::Local<v8::Value> AsyncWrap::MakeCallback(
-    uint32_t index,
-    int argc,
-    v8::Local<v8::Value>* argv) {v8::Local<v8::Value> cb_v = object()->Get(index);
-  CHECK(cb_v->IsFunction());
-  return MakeCallback(cb_v.As<v8::Function>(), argc, argv);
+inline v8::Local<v8::Value> AsyncWrap::MakeCallback(uint32_t index, int argc, v8::Local<v8::Value>* argv) {
+    v8::Local<v8::Value> cb_v = object()->Get(index);
+    CHECK(cb_v->IsFunction());
+    return MakeCallback(cb_v.As<v8::Function>(), argc, argv);
 }
 ```
 `TimerWrap` 对象通过数组的索引寻址，找到 Timer 对象索引 0 的对象，而对其赋值的是在 lib/timer.js 里面的

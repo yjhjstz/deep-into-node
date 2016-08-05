@@ -26,7 +26,8 @@ gen 目录下生成一个文件 `node_natives.h`。
 该文件由 js2c.py 生成。 js2c.py 会将 node 源代码中的 lib 目录下所有 js 文件以及 src 目录下的 node.js 文件中每一个字符转换成对应的 ASCII 码，并存放在相应的数组里面。
 
 ```c++
-namespace node {const char node_native[] = {47, 47, 32, 67, 112 …}
+namespace node {
+  const char node_native[] = {47, 47, 32, 67, 112 …}
 
 const char console_native[] = {47, 47, 32, 67, 112 …}
 
@@ -61,7 +62,8 @@ static const struct _native natives[] = {{ “node”, node_native, sizeof(node_
 在 node.cc 里面提供了一个函数 Binding()。当我们的应用或者 node 内建的模块调用 require() 来引用另一个模块时，背后的支撑者即是这里提到的 Binding() 函数。后面会讲述这个函数如何支撑 require() 的。这里先主要剖析这个函数。
 
 ```c++
-static void Binding(const FunctionCallbackInfo<Value>& args) {Environment* env = Environment::GetCurrent(args);
+static void Binding(const FunctionCallbackInfo<Value>& args) {
+  Environment* env = Environment::GetCurrent(args);
 
   Local<String> module = args[0]->ToString(env->isolate());
   node::Utf8Value module_v(env->isolate(), module);
@@ -69,7 +71,8 @@ static void Binding(const FunctionCallbackInfo<Value>& args) {Environment* env =
   Local<Object> cache = env->binding_cache_object();
   Local<Object> exports;
 
-  if (cache->Has(module)) {exports = cache->Get(module)->ToObject(env->isolate());
+  if (cache->Has(module)) {
+    exports = cache->Get(module)->ToObject(env->isolate());
     args.GetReturnValue().Set(exports);
     return;
   }
@@ -83,7 +86,8 @@ static void Binding(const FunctionCallbackInfo<Value>& args) {Environment* env =
   modules->Set(l, OneByteString(env->isolate(), buf));
 
   node_module* mod = get_builtin_module(*module_v);
-  if (mod != nullptr) {exports = Object::New(env->isolate());
+  if (mod != nullptr) {
+    exports = Object::New(env->isolate());
     // Internal bindings don't have a"module" object, only exports.
     CHECK_EQ(mod->nm_register_func, nullptr);
     CHECK_NE(mod->nm_context_register_func, nullptr);
@@ -92,15 +96,18 @@ static void Binding(const FunctionCallbackInfo<Value>& args) {Environment* env =
     mod->nm_context_register_func(exports, unused,
       env->context(), mod->nm_priv);
     cache->Set(module, exports);
-  } else if (!strcmp(*module_v,"constants")) {exports = Object::New(env->isolate());
+  } else if (!strcmp(*module_v,"constants")) {
+    exports = Object::New(env->isolate());
     // for constants
     DefineConstants(exports);
     cache->Set(module, exports);
-  } else if (!strcmp(*module_v,"natives")) {exports = Object::New(env->isolate());
+  } else if (!strcmp(*module_v,"natives")) {
+    exports = Object::New(env->isolate());
     // for native module
     DefineJavaScript(env, exports);
     cache->Set(module, exports);
-  } else {char errmsg[1024];
+  } else {
+    char errmsg[1024];
     snprintf(errmsg,
              sizeof(errmsg),
              "No such module: %s",
@@ -129,7 +136,8 @@ require 是怎么来的，为什么平白无故就能用呢，实际上都干了
 ```js
 // Loads a module at the given file path. Returns that module's
 // `exports` property.
-Module.prototype.require = function(path) {assert(path,'missing path');
+Module.prototype.require = function(path) {
+  assert(path,'missing path');
   assert(typeof path ==='string','path must be a string');
   return Module._load(path, this);
 };
@@ -145,15 +153,20 @@ Module.prototype.require = function(path) {assert(path,'missing path');
 // 3. Otherwise, create a new module for the file and save it to the cache.
 //    Then have it load  the file contents before returning its exports
 //    object.
-Module._load = function(request, parent, isMain) {if (parent) {debug('Module._load REQUEST %s parent: %s', request, parent.id);
+Module._load = function(request, parent, isMain) {
+  if (parent) {
+    debug('Module._load REQUEST %s parent: %s', request, parent.id);
   }
 
   var filename = Module._resolveFilename(request, parent);
 
   var cachedModule = Module._cache[filename];
-  if (cachedModule) {return cachedModule.exports;}
+  if (cachedModule) {
+    return cachedModule.exports;
+  }
 
-  if (NativeModule.nonInternalExists(filename)) {debug('load native module %s', request);
+  if (NativeModule.nonInternalExists(filename)) {
+    debug('load native module %s', request);
     return NativeModule.require(filename);
   }
 
@@ -168,10 +181,13 @@ Module._load = function(request, parent, isMain) {if (parent) {debug('Module._lo
 
   var hadException = true;
 
-  try {module.load(filename);
+  try {
+    module.load(filename);
     hadException = false;
-  } finally {if (hadException) {delete Module._cache[filename];
-    }
+  } finally {
+      if (hadException) {
+        delete Module._cache[filename];
+      }
   }
 
   return module.exports;
@@ -183,12 +199,18 @@ Module._load = function(request, parent, isMain) {if (parent) {debug('Module._lo
 
 让我们再深度遍历的方式查看代码到 `NativeModule.require`.
 ```js
-  NativeModule.require = function(id) {if (id =='native_module') {return NativeModule;}
+  NativeModule.require = function(id) {
+    if (id =='native_module') {
+      return NativeModule;
+    }
 
     var cached = NativeModule.getCached(id);
-    if (cached) {return cached.exports;}
+    if (cached) {
+      return cached.exports;
+    }
 
-    if (!NativeModule.exists(id)) {throw new Error('No such native module '+ id);
+    if (!NativeModule.exists(id)) {
+      throw new Error('No such native module '+ id);
     }
 
     process.moduleLoadList.push('NativeModule' + id);
@@ -214,25 +236,28 @@ nativeModule.compile();
 
 具体实现在 `node.js` 中：
 ```js
-NativeModule.getSource = function(id) {return NativeModule._source[id];
-  };
+NativeModule.getSource = function(id) {
+  return NativeModule._source[id];
+};
 
-  NativeModule.wrap = function(script) {return NativeModule.wrapper[0] + script + NativeModule.wrapper[1];
-  };
+NativeModule.wrap = function(script) {
+  return NativeModule.wrapper[0] + script + NativeModule.wrapper[1];
+};
 
-  NativeModule.wrapper = ['(function (exports, require, module, __filename, __dirname) {','\n});' ];
+NativeModule.wrapper = ['(function (exports, require, module, __filename, __dirname) {','\n});' ];
 
-  NativeModule.prototype.compile = function() {var source = NativeModule.getSource(this.id);
-    source = NativeModule.wrap(source);
+NativeModule.prototype.compile = function() {
+  var source = NativeModule.getSource(this.id);
+  source = NativeModule.wrap(source);
 
-    var fn = runInThisContext(source, {
-      filename: this.filename,
-      lineOffset: 0
-    });
-    fn(this.exports, NativeModule.require, this, this.filename);
+  var fn = runInThisContext(source, {
+    filename: this.filename,
+    lineOffset: 0
+  });
+  fn(this.exports, NativeModule.require, this, this.filename);
 
-    this.loaded = true;
-  };
+  this.loaded = true;
+};
 ```
 
 `wrap` 函数将 http.js 包裹起来, 交由 `runInThisContext` 编译源码，返回 fn 函数, 依次将参数传人。
@@ -267,7 +292,9 @@ Local f = Local::Cast(f_value);
 
 Localglobal = v8::Context::GetCurrent()->Global();
 
-Local args[1] = {Local::New(process) };
+Local args[1] = {
+  Local::New(process) 
+};
 
 f->Call(global, 1, args);
 ```
@@ -275,9 +302,11 @@ f->Call(global, 1, args);
 ### vm
 `runInThisContext` 又是怎么一回事呢？
 ```js
- var ContextifyScript = process.binding('contextify').ContextifyScript;
-  function runInThisContext(code, options) {var script = new ContextifyScript(code, options);
-    return script.runInThisContext();}
+  var ContextifyScript = process.binding('contextify').ContextifyScript;
+  function runInThisContext(code, options) {
+    var script = new ContextifyScript(code, options);
+    return script.runInThisContext();
+  }
 ```
 
 * node.cc 的 Binding 中有如下调用，对模块进行注册，
