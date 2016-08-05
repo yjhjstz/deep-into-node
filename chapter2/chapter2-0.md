@@ -17,28 +17,35 @@ V8更加直接的将抽象语法树通过JIT技术转换成本地代码，放弃
 > An isolate is a VM instance with its own heap. It represents an isolated instance of the V8 engine.
 > V8 isolates have completely separate states. Objects from one isolate must not be used in other isolates.
 
-一个Isolate是一个独立的虚拟机。对应一个或多个线程。但同一时刻 只能被一个线程进入。所有的Isolate彼此之间是完全隔离的,它们不能够有任何共享的资源。如果不显示创建Isolate,会自动创建一个默认的Isolate。
+一个Isolate是一个独立的虚拟机。对应一个或多个线程。但同一时刻 只能被一个线程进入。所有的 Isolate 彼此之间是完全隔离的,它们不能够有任何共享的资源。如果不显示创建Isolate,会自动创建一个默认的Isolate。
 
 后面提到的Context、Scope、Handle的概念都是一个Isolate内部的, 如下图：
 ![](Context.png)
 
 ### Handle 概念
-在V8中，内存分配都是在V8的Heap中进行分配的，JavaScript的值和对象也都存放在V8的Heap中。这个Heap由V8独立的去维护，失去引
-用的对象将会被V8的GC掉并可以重新分配给其他对象。而Handle即是对Heap中对象的引用。V8为了对内存分配进行管理，GC需要对V8中的
-所有对象进行跟踪，而对象都是用Handle方式引用的，所以GC需要对Handle进行管理，这样GC就能知道Heap中一个对象的引用情况，当一个对象的Handle引用发生改变的时候，GC即可对该对象进行回收或者移动。因此，V8编程中必须使用Handle去引用一个对象，而不是直接通过C
-++的方式去获取对象的引用，直接通过C++的方式去直接去引用一个对象，会使得该对象无法被V8管理。
+在V8中，内存分配都是在V8的Heap中进行分配的，JavaScript 的值和对象也都存放在V8的 Heap 中。这个 Heap 由V8独立的去维护，失去引
+用的对象将会被V8的GC掉并可以重新分配给其他对象。而 Handle 即是对 Heap 中对象的引用。V8为了对内存分配进行管理，GC需要对V8中的
+所有对象进行跟踪，而对象都是用 Handle 方式引用的，所以GC需要对 Handle 进行管理，这样GC就能知道 Heap 中一个对象的引用情况，当一个对象的 Handle 引用发生改变的时候，GC即可对该对象进行回收或者移动。因此，V8编程中必须使用Handle去引用一个对象，而不是直接通过C
+++的方式去获取对象的引用，直接通过C++的方式去引用一个对象，会使得该对象无法被V8管理。
 
-Handle分为Local和Persistent两种。
+Handle 分为 Local 和 Persistent 两种。
 
-从字面上就能知道，Local是局部的，它同时被HandleScope进行管理。persistent，类似与全局的，不受HandleScope的管理，其作用域可以延伸到不同的函数，而Local是局部的，作用域比较小。Persistent Handle对象需要Persistent::New, Persistent::Dispose配对使用，类似于C++中new和delete.Persistent::MakeWeak可以用来弱化一个Persistent Handle，如果一个对象的唯一引用Handle是一个Persistent，则可以使用MakeWeak方法来如果该引用，该方法可以出发GC对被引用对象的回收。
+从字面上就能知道，Local 是局部的，它同时被 HandleScope 进行管理。
+persistent，类似与全局的，不受 HandleScope 的管理，其作用域可以延伸到不同的函数，而 Local 是局部的，作用域比较小。
+Persistent Handle 对象需要 Persistent::New, Persistent::Dispose 配对使用，类似于 C++ 中 new 和 delete。
+
+Persistent::MakeWeak 可以用来弱化一个 Persistent Handle，如果一个对象的唯一引用 Handle 是一个 Persistent，则可以使用 MakeWeak 方法来弱化该引用，该方法可以触发 GC 对被引用对象的回收。
 
 ### Scope
-从概念上理解，作用域可以看成是一个句柄的容器，在一个作用域里面可以有很多很多个句柄（也就是说，一个scope里面可以包含很多很多个
+从概念上理解，作用域可以看成是一个句柄的容器，在一个作用域里面可以有很多很多个句柄（也就是说，一个 scope 里面可以包含很多很多个
 v8引擎相关的对象），句柄指向的对象是可以一个一个单独地释放的，但是很多时候（真正开始写业务代码的时候），一个一个地释放句柄过于
-繁琐，取而代之的是，可以释放一个scope，那么包含在这个scope中的所有handle就都会被统一释放掉了。
+繁琐，取而代之的是，可以释放一个 scope，那么包含在这个 scope 中的所有 handle 就都会被统一释放掉了。
 
-Scope在v8.h中有这么几个：HandleScope，Context::Scope。HandleScope是用来管理
-Handle的，而Context::Scope仅仅用来管理Context对象。代码像下面这样：
+Scope在v8.h中有这么几个：HandleScope，Context::Scope。
+
+HandleScope是用来管理 Handle 的，而 Context::Scope 仅仅用来管理 Context 对象。
+
+代码像下面这样：
 ```c++
   //在此函数中的Handle都会被handleScope管理
   HandleScope handleScope;
@@ -47,14 +54,14 @@ Handle的，而Context::Scope仅仅用来管理Context对象。代码像下面�
   Context::Scope contextScope(context);
   //其它代码
 ```
-一般情况下，函数的开始部分都放一个HandleScope，这样此函数中的Handle就不需要再理会了释放资源了。
-而Context::Scope仅仅做了：在构造中调用context->Enter()，而在析构函数中调用context->Leave()。
+一般情况下，函数的开始部分都放一个 HandleScope，这样此函数中的 Handle 就不需要再理会释放资源了。
+而 Context::Scope 仅仅做了：在构造中调用 context->Enter()，而在析构函数中调用 context->Leave()。
 
 
 ### Context 概念 
-从概念上讲，这个上下文环境也可以理解为运行环境。在执行javascript脚本的时候，总要有一些环境变量或者全局函数。我们如果要在自己的
-c++代码中嵌入v8引擎，自然希望提供一些c++编写的函数或者模块，让其他用户从脚本中直接调用，这样才会体现出javascript的强大。我
-们可以用c++编写全局函数或者类，让其他人通过javascript进行调用，这样，就无形中扩展了javascript的功能。 
+从概念上讲，这个上下文环境也可以理解为运行环境。在执行javascript脚本的时候，总要有一些环境变量或者全局函数。
+我们如果要在自己的c++代码中嵌入v8引擎，自然希望提供一些c++编写的函数或者模块，让其他用户从脚本中直接调用，这样才会体现出javascript的强大。
+我们可以用c++编写全局函数或者类，让其他人通过javascript进行调用，这样，就无形中扩展了javascript的功能。 
 
 Context可以嵌套，即当前函数有一个Context，调用其它函数时如果又有一个Context，则在被调用的函数中javascript是以最近的
 Context为准的，当退出这个函数时，又恢复到了原来的Context。
