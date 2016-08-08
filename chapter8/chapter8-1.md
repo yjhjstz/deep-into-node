@@ -57,7 +57,7 @@
 
 ### 流模块基础
 
-nodejs底层一个提供了4个流， Readable 流、Writable 流、Duplex 流和 Transform流。
+nodejs 底层一共提供了4个流， Readable 流、Writable 流、Duplex 流和 Transform 流。
 
 
 使用情景 |	类 | 	需要重写的方法
