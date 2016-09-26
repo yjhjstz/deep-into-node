@@ -15,7 +15,7 @@ Handle<Value> Add(const Arguments& args){
 Integer 即为 Value 的一个子类。
 
 V8 中，有两个模板 (Template) 类 (并非 C++ 中的模板类)：
-- 对象模板 (ObjectTempalte) 
+- 对象模板 (ObjectTemplate) 
 - 函数模板 (FunctionTemplate)
 这两个模板类用以定义 JavaScript 对象和 JavaScript 函数。我们在后续的小节部分将会接触到模板类的实例。通过使用
 ObjectTemplate，可以将 C++ 中的对象暴露给脚本环境，类似的，FunctionTemplate 用以将 C++
