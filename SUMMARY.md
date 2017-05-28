@@ -1,6 +1,6 @@
 # Table of content
 
-* [惊鸿一瞥](chapter1/README.md)
+* [Node简介](chapter1/README.md)
   * [架构一览](chapter1/chapter1-0.md)
   * [为啥是libuv](chapter1/chapter1-1.md)
   * [V8 概念](chapter2/chapter2-0.md)
