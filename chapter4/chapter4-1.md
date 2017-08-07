@@ -18,7 +18,7 @@
 
 
 
-### round-robin (轮训)
+### round-robin (轮询)
 
 上面的多进程模型存在诸多问题，于是就出现了基于round-robin的另一种模型。
 主要思路是master进程创建socket，绑定好地址以及端口后再进行监听。该socket的fd不传递到各个worker进程，当master进程获取到新的连接时，再决定将accept到的客户端socket fd传递给指定的worker处理。我这里使用了指定, 所以如何传递以及传递给哪个worker完全是可控的，round-robin只是其中的某种算法而已，当然可以换成其他的。
