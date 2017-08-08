@@ -59,7 +59,7 @@ server.on('connection', function(sock) {
 1120 util.inherits(Server, EventEmitter);
 ```
 
-`Server` 继承了 `EventEmitter`, 如果传人 callback 函数，  L1086，L1091 则把传人的函数作为监听者
+`Server` 继承了 `EventEmitter`, 如果传入 callback 函数，  L1086，L1091 则把传入的函数作为监听者
 绑定到 `connnection`事件上， 然后 listen 。我们看看作为 server 端连接到来的回调处理。
 ```js
 1400 function onconnection(err, clientHandle) {
@@ -139,7 +139,7 @@ client.on('close', function() {
 创建 `Socket`对象后，client 端向server端发起连接，在真正的连接之前，需要进行 DNS 查询（提供 IP 的不用），
 调用 `lookupAndConnect`, 之后才是调用 `function connect(self, address, port, addressType, localAddress, localPort) `发起连接。
 
-我们注意到五元祖: `<remoteAddress, remotePort, addressType, localAddress, localPort>`, 他们唯一的标识了一个网络连接。
+我们注意到五元组: `<remoteAddress, remotePort, addressType, localAddress, localPort>`, 他们唯一的标识了一个网络连接。
 
 建立起全双工的 Socket 后，用户程序就可以监听 「data」事件，获取数据了。
 
