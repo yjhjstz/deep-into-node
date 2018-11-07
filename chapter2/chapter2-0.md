@@ -17,7 +17,7 @@ V8 更加直接的将抽象语法树通过 JIT 技术转换成本地代码，放
 > An isolate is a VM instance with its own heap. It represents an isolated instance of the V8 engine.
 > V8 isolates have completely separate states. Objects from one isolate must not be used in other isolates.
 
-一个 Isolate 是一个独立的虚拟机。对应一个或多个线程。但同一时刻 只能被一个线程进入。所有的 Isolate 彼此之间是完全隔离的, 它们不能够有任何共享的资源。如果不显示创建 Isolate, 会自动创建一个默认的 Isolate。
+一个 Isolate 是一个独立的虚拟机。对应一个或多个线程。但同一时刻 只能被一个线程进入。所有的 Isolate 彼此之间是完全隔离的, 它们不能够有任何共享的资源。如果不显式创建 Isolate, 会自动创建一个默认的 Isolate。
 
 后面提到的 Context、Scope、Handle 的概念都是一个 Isolate 内部的, 如下图：
 ![](Context.png)
