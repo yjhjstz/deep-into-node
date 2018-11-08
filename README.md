@@ -49,7 +49,7 @@ Node.js 的源码分析，基于node v6.0.0。
   * [文件 IO](chapter11/chapter11-5.md)
   * [Fs 精粹](chapter11/chapter11-6.md)
 * [进程](chapter13/README.md)
-  * [进程](chapter13/chapter13-1.md)
+  * [子进程](chapter13/chapter13-1.md)
   * [Cluster](chapter4/chapter4-1.md)
 * [Node.js 的坑](chapter14/chapter14-5.md)
 * [其他](chapter14/README.md)
