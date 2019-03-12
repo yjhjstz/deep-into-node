@@ -71,7 +71,7 @@ console.log(Person.sex); // undefined
     |          |
     |          |
     V          V
-   function   Object
+   Object   function
 ```
 
 而node.js导出的，永远是module.exports指向的对象，在这里就是function。所以exports指向的那个object，现在已经不会被导出了，为其增加的属性当然也就没用了。
