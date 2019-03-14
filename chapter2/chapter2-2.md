@@ -143,7 +143,7 @@ Module.prototype.require = function(path) {
 };
 ```
 
-首先 assert 模块进行简单的 path 变量的判断，需要传人的 `path` 是一个 string 类型。
+首先 assert 模块进行简单的 path 变量的判断，需要传入的 `path` 是一个 string 类型。
 
 ```js
 // Check the cache for the requested file.
@@ -260,7 +260,7 @@ NativeModule.prototype.compile = function() {
 };
 ```
 
-`wrap` 函数将 http.js 包裹起来, 交由 `runInThisContext` 编译源码，返回 fn 函数, 依次将参数传人。
+`wrap` 函数将 http.js 包裹起来, 交由 `runInThisContext` 编译源码，返回 fn 函数, 依次将参数传入。
 
 
 
