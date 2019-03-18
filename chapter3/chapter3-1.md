@@ -169,7 +169,7 @@ static int timer_less_than(const struct heap_node* ha,
 102   return 0;
 103 }
 ```
-L94，检查 handle, 如果是非获取的，则说明没有启动过，则返回成功。
+L94，检查 handle, 如果是非活跃的，则说明没有启动过，则返回成功。
 L97-L99, 从最小堆中删除 timer的节点。
 L100, 重置句柄，并减少计数。
 
