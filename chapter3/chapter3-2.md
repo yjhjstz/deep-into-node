@@ -23,7 +23,7 @@ function* fibonacci() {
 ### yield与异步
 yield可以暂停运行流程，那么便为改变执行流程提供了可能。这和Python的coroutine类似。
 
-Geneartor之所以可用来控制代码流程，就是通过yield来将两个或者多个Geneartor的执行路径互相切换。这种切换是语句级别的，而不是函数调用级别的。其本质是CPS变换。
+Generator之所以可用来控制代码流程，就是通过yield来将两个或者多个Generator的执行路径互相切换。这种切换是语句级别的，而不是函数调用级别的。其本质是CPS变换。
 
 yield之后，实际上本次调用就结束了，控制权实际上已经转到了外部调用了generator的next方法的函数，调用的过程中伴随着状态的改变。那么如果外部函数不继续调用next方法，那么yield所在函数就相当于停在yield那里了。所以把异步的东西做完，要函数继续执行，只要在合适的地方再次调用generator 的next就行，就好像函数在暂停后，继续执行。
 
@@ -242,7 +242,7 @@ L2297从 result 寄存器中取出 value, L2299调用 `RUNTIME_FUNCTION(Runtime_
 
 ### 延伸
 我们看到node.js依托 v8层面实现了协程，有兴趣的同学可以关心下 fibjs, 它是用 C库实现了协程，遇到异步调用就 "yield" 放弃 CPU，
-交由协程调度，也解决了 callcack hell 的问题。
+交由协程调度，也解决了 callback hell 的问题。
 本质思想上两种方案没本质区别：
 * Generator是利用yield特殊关键字来暂停执行，而fibers是利用Fiber.yield()暂停
 * Generator是利用函数返回的Generator句柄来控制函数的继续执行，而fibers是在异步回调中利用Fiber.current.run()继续执行。
