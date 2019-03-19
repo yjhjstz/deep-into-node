@@ -242,7 +242,7 @@ L2297从 result 寄存器中取出 value, L2299调用 `RUNTIME_FUNCTION(Runtime_
 
 ### 延伸
 我们看到node.js依托 v8层面实现了协程，有兴趣的同学可以关心下 fibjs, 它是用 C库实现了协程，遇到异步调用就 "yield" 放弃 CPU，
-交由协程调度，也解决了 callcack hell 的问题。
+交由协程调度，也解决了 callback hell 的问题。
 本质思想上两种方案没本质区别：
 * Generator是利用yield特殊关键字来暂停执行，而fibers是利用Fiber.yield()暂停
 * Generator是利用函数返回的Generator句柄来控制函数的继续执行，而fibers是在异步回调中利用Fiber.current.run()继续执行。
