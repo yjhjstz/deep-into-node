@@ -1,7 +1,7 @@
 
 ## Global对象
 
-所有属性都可以在程序的任何地方访问，即全局变量。在javascript中，通常window是全局对象，而node.js的全局对象是global，所有全局变量都是global对象的属性，如：console、process等。
+所有属性都可以在程序的任何地方被访问，即全局变量。在javascript中，通常window是全局对象，而node.js的全局对象是global，所有全局变量都是global对象的属性，如：console、process等。
 
 
 ### 全局对象与全局变量
