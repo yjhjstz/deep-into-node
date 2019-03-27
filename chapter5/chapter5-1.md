@@ -65,11 +65,11 @@ more用来标识是否进行下一轮循环。 env->event_loop()会返回之前�
 
 ### process.nextTick
 ![](settimeout.jpeg)
-带着这个问题，我们看看 JS 层的 nextTick 是怎么被驱动。
+带着这个问题，我们看看 JS 层的 nextTick 是怎么被驱动的。
 
 在入口点 `src/node.js`, `processNextTick` 方法构建了 `process.nextTick` API。
 
-`process._tickCallback ` 作为 nexttick 的回调函数，挂到了 `process` 对象上，由 C++层面回调使用。
+`process._tickCallback ` 作为 nextTick 的回调函数，挂到了 `process` 对象上，由 C++ 层回调使用。
 
 ```js
 startup.processNextTick = function() {
@@ -149,7 +149,7 @@ Module.runMain = function() {
 
 `Module._load` 加载主脚本后，就调用 `_tickCallback`, 处理第一次的 tick 了。
 
-所以上面的疑问有了答案，`nextTick` 主要在 `uv__io_poll` 驱动。为什么说主要呢? 因为还
+所以上面的疑问有了答案，`nextTick` 主要在 `uv__io_poll` 驱动。为什么说主要呢？因为还
 可能在 Timer模块驱动，具体细节留给读者去研究啦。
 
 
