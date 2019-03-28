@@ -25,7 +25,7 @@
 
 ### Event.js 实现
 EventEmitter 允许我们注册一个或多个函数作为 listeners。 在特定的事件触发时被调用。如下图：
-![](2016-05-09 14.13.19.png)
+![](https://github.com/yjhjstz/deep-into-node/blob/master/chapter7/2016-05-09%2014.13.19.png)
 #### listeners 存储
 一般观察者的设计模式的实现逻辑是类似的，都是有一个类似map的结构，存储监听事件和回调函数的对应关系。
 ```js
