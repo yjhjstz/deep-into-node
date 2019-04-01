@@ -120,14 +120,14 @@ send方法可以发送的对象包括如下集中：
 
 传递的过程：
 
-** 主进程 **：
+**主进程**：
 
 - 传递消息和句柄。
 - 将消息包装成内部消息，使用 JSON.stringify 序列化为字符串。
 - 通过对应的 handleConversion[message.type].send 方法序列化句柄。
 - 将序列化后的字符串和句柄发入 IPC channel 。
 
-** 子进程 **
+**子进程**：
 
 - 使用 JSON.parse 反序列化消息字符串为消息对象。
 - 触发内部消息事件（internalMessage）监听器。
