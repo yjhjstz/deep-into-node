@@ -1,19 +1,19 @@
-### 楔子
-`node-profiler` 作为 alinode 团队的另一款产品能够帮助您线下深入分析 javascript 代码的性能，将Google V8的性能细节展现在您的面前，优化而知其所以然。线上调优请使用 `alinode`。
+### Introduction
+`node-profiler` is another product of the alinode team that can help you analyze the performance of JavaScript code offline, presenting the performance details of Google V8 in front of you, and optimizing it. For online tuning, please use `alinode`.
 
-### 下载安装
-推荐安装工具`tnvm`，支持 node, alinode, profiler 的安装切换。
+### Download and Install
+It is recommended to install the tool `tnvm`, which supports the installation and switching of node, alinode, and profiler.
 ```
 wget -O- https://raw.githubusercontent.com/aliyun-node/tnvm/master/install.sh | bash
 ```
-完成安装后，您需要将tnvm添加为命令行程序。根据平台的不同，可能是~/.bashrc，~/.profile或~/.zshrc.
+After the installation is complete, you need to add tnvm as a command-line program. Depending on the platform, it may be `~/.bashrc`, `~/.profile`, or `~/.zshrc`.
 ```shell
  tnvm install profiler-v0.12.6
  tnvm use profiler-v0.12.6
 ```
 
 
-### 使用示例
+### Usage Example
 ```js
 var http = require('http');
 http.createServer(function (req, res) {
@@ -29,60 +29,61 @@ webkit-devtools-agent: A proxy got connected.
 webkit-devtools-agent: Waiting for commands...
 webkit-devtools-agent: Websockets service started on 0.0.0.0:9999  <==启动成功
 ```
-如出现如下：
+If the following appears:
 ```shell
 Error: listen EADDRINUSE           <== 可能是由于端口被占用
 ```
 
-成功启动后，则用chrome(推荐)手动打开url (http://alinode.aliyun.com/profiler/inspector.html?host=localhost:9999&page=0)
-出现如下界面：
+After successful startup, manually open the URL (http://alinode.aliyun.com/profiler/inspector.html?host=localhost:9999&page=0) with Chrome (recommended).
+The following interface appears:
 ![](https://cloud.githubusercontent.com/assets/3832082/8587127/7b54f88c-262a-11e5-9298-3a49c2b71d7c.jpg)
 
-默认**Collect JavaSript CPU Profile**，单击**Start**。
+By default, **Collect JavaSript CPU Profile** is selected, click **Start**.
 
-可以采用压测脚本实现对服务进行压力测试，保证更多的结果：
+You can use the pressure test script to implement pressure testing on the service to ensure more results:
 ```shell
-$ wrk http://localhost:1334/ # 这里使用wrk，也可以使用其他工具，如ab
+$ wrk http://localhost:1334/ # Here we use wrk, other tools such as ab can also be used
 ```
-点击**Stop**，得到如下图的结果：
+Click **Stop** to get the following results:
 ![](https://cloud.githubusercontent.com/assets/3832082/8587247/8dc33cbc-262b-11e5-8a10-59c8f9de280e.jpg)
 
-可以看到更多关于函数在运行时的信息。
+More information about functions during runtime can be seen.
 
-### UI含义
-UI 栏目 | 示意
+### UI Meaning
+UI Column | Meaning
 ----   | ----
 Self | exclusive time
 Total | inclusive time
-# Hidden Classes  | 隐藏类个数
-Bailout | v8中提取的最后一次去优化原因
-Function | 函数名称 script : line
+# Hidden Classes  | Number of hidden classes
+Bailout | The last reason for deoptimization extracted in v8
+Function | Function name script : line
 
-**红色表示函数未被优化， 淡绿色表示函数被V8优化过。**
+**Red indicates that the function has not been optimized, and light green indicates that the function has been optimized by V8.**
 
-### 原理介绍
-- 基于V8内置采样收集器；
-- 固定采样频率，默认1ms, 可配置；
-- 会暂停主线程，采样函数call stack，统计时间；
-- 需保证采样足够长的时间（预热）。
+### Principle Introduction
+- Based on the built-in sampling collector of V8;
+- Fixed sampling frequency, default 1ms, configurable;
+- The main thread is paused, the function call stack is sampled, and the time is counted;
+- It is necessary to ensure that the sampling is long enough (preheating).
 
-#### 解释下两个概念
-- exclusive time :独占时间
-- inclusive time :包含时间
+#### Explanation of two concepts
+- exclusive time: exclusive time
+- inclusive time: inclusive time
 
 ```js
 function foo() { 
    bar();
 }
 function bar() {
-          <==采样点
+          <==Sampling point
 }
 foo();
 ```
 
-这个例子，采样点在bar()，那么bar所消耗的时间叫作 **exclusive time**，而foo调用了bar, foo所消耗的时间包括了bar的时间，叫作 **inclusive time** .
+In this example, the sampling point is in `bar()`, so the time consumed by `bar` is called **exclusive time**, and `foo` calls `bar`, so the time consumed by `foo` includes the time of `bar`, called **inclusive time**.
 
 
-### 注意事项
-* 该工具目前只支持 X64 平台（Linux, Mac)。
-* 切勿部署到线上，如需线上调优请使用 [alinode](alinode.aliyun.com)。
+### Precautions
+* This tool currently only supports X64 platforms (Linux, Mac).
+* Do not deploy it online. If you need online tuning, please use [alinode](alinode.aliyun.com).
+

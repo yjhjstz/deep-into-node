@@ -1,7 +1,8 @@
-# V8 bailout reasons
-v8 bailout reasons 的例子, 解释和建议. 帮助`alinode`的用户根据 CPU-Profiler 的提示进行优化。
 
-## 索引
+# V8 bailout reasons
+Examples, explanations and suggestions for v8 bailout reasons. Help `alinode` users optimize according to CPU-Profiler prompts.
+
+## Index
 ### [Bailout reasons](#bailout-reasons-1)
 
 * [Assignment to parameter in arguments object](#assignment-to-parameter-in-arguments-object)
@@ -19,7 +20,7 @@ v8 bailout reasons 的例子, 解释和建议. 帮助`alinode`的用户根据 CP
 ## Bailout reasons
 ### Assignment to parameter in arguments object
 
-* 简单例子
+* Simple example
 
 ```js
 // sloppy mode only
@@ -31,17 +32,17 @@ function test(a) {
 ```
 
 * Why
-  * 只会在函数中重新赋值参数发生。
+  * Only occurs when reassigning parameters in a function.
 
 * Advices
-  * 你不能给变量 a 重新赋值.
-  * 最好使用 strict mode .
-  * V8 最新的 TurboFan 会有优化 [#1][1].
+  * You cannot reassign variable a.
+  * It is better to use strict mode.
+  * V8's latest TurboFan will have optimizations [#1][1].
 
 
 ### Bad value context for arguments value
 
-* 简单例子
+* Simple example
 
 ```js
 // strict & sloppy modes
@@ -74,20 +75,20 @@ function test5() {
 ```
 
 * Why
-  * 要求再具体化 `arguments` 数组.
+  * Requires further specification of the `arguments` array.
 
 * Advices
-  * 可以读读: https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#3-managing-arguments
-  * 你可以循环 `arguments` 创建一个新的数组  [Unsupported phi use of arguments](#unsupported-phi-use-of-arguments)
-  * V8 最新的 TurboFan 会有优化 [#1][1].
+  * You can read: https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#3-managing-arguments
+  * You can loop through `arguments` to create a new array [Unsupported phi use of arguments](#unsupported-phi-use-of-arguments)
+  * V8's latest TurboFan will have optimizations [#1][1].
 
-* 外部链接
+* External links
   * https://github.com/bevry/taskgroup/issues/12
-  * [更多][7]
+  * [More][7]
 
 ### ForInStatement with non-local each variable
 
-* 简单例子
+* Simple example
 
 ```js
 // strict & sloppy modes
@@ -110,16 +111,16 @@ function test2() {
   * https://github.com/yjhjstz/v8-git-mirror/blob/master/src/hydrogen.cc#L5254
 
 * Advices
-  * 只有纯局部变量可以用于 for...in 
+  * Only pure local variables can be used in for...in.
   * https://github.com/petkaantonov/bluebird/wiki/Optimization-killers#5-for-in
 
-* 外面链接
+* External links
   * https://github.com/mbostock/d3/pull/2686
 
 
 ### Object literal with complex property
 
-* 简单例子
+* Simple example
 
 ```js
 // strict & sloppy modes
@@ -133,11 +134,11 @@ function test() {
 * Why
   
 * Advices
-  * 简化 Object。
+  * Simplify the Object.
 
 ### ForInStatement is not fast case
 
-* 简单例子
+* Simple example
 ```js
 for (var prop in obj) {
   /* lots of code */
@@ -145,15 +146,15 @@ for (var prop in obj) {
 ```
 
 * Why
-  * for 循环中包含太多的代码。
+  * Too much code in the for loop.
 
 * Advices
-  * for 循环中的提取代码提取为函数。
+  * Extract the code in the for loop into a function.
 
 
 ### Reference to a variable which requires dynamic lookup
 
-* 简单例子
+* Simple example
 ```js
 // sloppy mode only
 function test() {
@@ -164,15 +165,15 @@ function test() {
 ```
 
 * Why
-  * 编译时编译定位失败，Crankshaft需要重新动态查找。[#3][3]
+  * Compilation fails to locate the variable at compile time, and Crankshaft needs to dynamically look it up again. [#3][3]
 
 * Advices
-  * TurboFan可以优化。
+  * TurboFan can optimize.
 
 
 ### TryCatchStatement
 
-* 简单例子
+* Simple example
 
 ```js
 // strict & sloppy modes OR // sloppy mode only
@@ -183,15 +184,15 @@ function func() {
 ```
 
 * Why
-  * try/catch 使得控制流不稳定，很难在运行时优化。
+  * try/catch makes the control flow unstable and difficult to optimize at runtime.
 * Advices
-  * 不要在负载重的函数中使用try/catch.
-  * 可以重构为 `try {  func() } catch`
+  * Do not use try/catch in heavily loaded functions.
+  * Can be refactored as `try {  func() } catch`
 
 
 ### TryFinallyStatement
 
-* 简单例子
+* Simple example
 
 ```js
 // strict & sloppy modes OR // sloppy mode only
@@ -242,18 +243,19 @@ function test3() {
 ```
 
 * Why
-  * Crankshaft 无法知道 `_arguments`是 object 或 array. 
-  * [深入了解](http://mrale.ph/blog/2015/11/02/crankshaft-vs-arguments-object.html)
+  * Crankshaft cannot determine whether `_arguments` is an object or an array.
+  * [Learn more](http://mrale.ph/blog/2015/11/02/crankshaft-vs-arguments-object.html)
 
 * Advices
-  * 最好操作 `arguments` 的拷贝.
-  * TurboFan 可以优化 [#1][1].
+  * It is best to operate on a copy of `arguments`.
+  * TurboFan can optimize [#1][1].
+```
 
 
 
 ### Yield
 
-* 简单例子
+* Simple example
 
 ```js
 // strict & sloppy modes
@@ -263,12 +265,12 @@ function* test() {
 ```
 
 * Why
-  * generator 状态保持、恢复通过拷贝函数栈帧实现，但在优化编译器中并不适用。
+  * Generator state preservation and restoration is achieved by copying function stack frames, which is not suitable for optimized compilers.
 
 * Advices
-  * 暂时不用考虑，TurboFan 可以优化。
+  * Currently, there is no need to consider this issue. TurboFan can optimize.
 
-* 外部链接：
+* External links:
   * https://groups.google.com/forum/#!topic/v8-users/KnnUb-u4rA8
 
 ---
@@ -293,6 +295,7 @@ function* test() {
 - [OptimizationKillers](https://github.com/zhangchiqing/OptimizationKillers)
 - [Performance Tips for JavaScript in V8](http://www.html5rocks.com/en/tutorials/speed/v8/)
 - [thlorenz/v8-perf](https://github.com/thlorenz/v8-perf/blob/master/compiler.md)
+
 
 
 
