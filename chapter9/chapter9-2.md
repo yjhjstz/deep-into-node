@@ -1,17 +1,16 @@
-## 应用构建
+## Application Building
 
-
-### 创建TCP服务端
-下面是一个在NodeJS中创建TCP服务端套接字的简单例子，相关说明见代码注释。
+### Creating a TCP Server
+Here is a simple example of creating a TCP server socket in NodeJS, with relevant explanations in the code comments.
 ```js
 var net = require('net');
 
 var HOST = '127.0.0.1';
 var PORT = 6969;
 
-// 创建一个TCP服务器实例，调用listen函数开始监听指定端口
-// 传入net.createServer()的回调函数将作为”connection“事件的处理函数
-// 在每一个“connection”事件中，该回调函数接收到的socket对象是唯一的
+// Create a TCP server instance, and call the listen function to start listening on the specified port
+// The callback function passed to net.createServer() will be the event handler for the "connection" event
+// In each "connection" event, the socket object received by this callback function is unique
 var server = net.createServer();
 server.listen(PORT, HOST);
 console.log('Server listening on ' +
@@ -23,7 +22,7 @@ server.on('connection', function(sock) {
 });
 ```
 
-首先我们来看下 `net.createServer`, 它返回一个 `Server`的实例，如下。
+First, let's take a look at `net.createServer`, which returns an instance of `Server`, as follows.
 ```js
 1075 function Server(options, connectionListener) {
 1076   if (!(this instanceof Server))
@@ -59,8 +58,7 @@ server.on('connection', function(sock) {
 1120 util.inherits(Server, EventEmitter);
 ```
 
-`Server` 继承了 `EventEmitter`, 如果传入 callback 函数，  L1086，L1091 则把传入的函数作为监听者
-绑定到 `connnection`事件上， 然后 listen 。我们看看作为 server 端连接到来的回调处理。
+`Server` inherits from `EventEmitter`. If a callback function is passed, L1086 and L1091 bind the passed function as a listener to the `connection` event, and then listen. Let's take a look at the callback processing when a connection arrives as a server.
 ```js
 1400 function onconnection(err, clientHandle) {
 1401   var handle = this;
@@ -93,18 +91,15 @@ server.on('connection', function(sock) {
 1431   self.emit('connection', socket);
 1432 }
 ```
-此函数由 `TCPWrap::OnConnection`回调，`tcp_wrap->MakeCallback(env->onconnection_string(), ARRAY_SIZE(argv), argv);`， 第一个参数标识状态，第二个参数为连接的句柄。
+This function is called back by `TCPWrap::OnConnection`, `tcp_wrap->MakeCallback(env->onconnection_string(), ARRAY_SIZE(argv), argv);`, where the first parameter indicates the status and the second parameter is the connection handle.
 
-L1416-L1421, 根据传过来的句柄，创建 JS 层面的 Socket。并在 L1431 向观察者发送 connection 事件。
+L1416-L1421, create a JS-level Socket based on the passed handle, and send a connection event to the observer at L1431.
 
+In the example of the TCP server above, the server listens for the `connection` event and customizes the user processing logic.
 
-上面 TCP 服务端的例子，server 监听connection 事件，自定义用户处理逻辑。
+### Creating a TCP Client
 
-
-
-### 创建TCP客户端
-
-现在让我们创建一个TCP客户端连接到刚创建的服务器上，该客户端向服务器发送一串消息，并在得到服务器的反馈后关闭连接。下面的代码描述了这一过程。
+Now let's create a TCP client that connects to the server just created, sends a message to the server, and closes the connection after receiving feedback from the server. The following code describes this process.
 ```js
 var net = require('net');
 
@@ -115,38 +110,31 @@ var client = new net.Socket();
 client.connect(PORT, HOST, function() {
 
     console.log('CONNECTED TO: ' + HOST + ':' + PORT);
-    // 建立连接后立即向服务器发送数据，服务器将收到这些数据 
+    // Send data to the server immediately after establishing a connection, and the server will receive this data
     client.write('I am Chuck Norris!');
 
 });
 
-// 为客户端添加“data”事件处理函数
-// data是服务器发回的数据
+// Add a "data" event processing function to the client
+// Data is the data sent back by the server
 client.on('data', function(data) {
 
     console.log('DATA: ' + data);
-    // 完全关闭连接
+    // Completely close the connection
     client.destroy();
 
 });
 
-// 为客户端添加“close”事件处理函数
+// Add a "close" event processing function to the client
 client.on('close', function() {
     console.log('Connection closed');
 });
 ```
 
-创建 `Socket`对象后，client 端向server端发起连接，在真正的连接之前，需要进行 DNS 查询（提供 IP 的不用），
-调用 `lookupAndConnect`, 之后才是调用 `function connect(self, address, port, addressType, localAddress, localPort) `发起连接。
+After creating the `Socket` object, the client initiates a connection to the server. Before the actual connection, a DNS query is required (not required if an IP is provided), and `lookupAndConnect` is called, followed by `function connect(self, address, port, addressType, localAddress, localPort)` to initiate the connection.
 
-我们注意到五元组: `<remoteAddress, remotePort, addressType, localAddress, localPort>`, 他们唯一的标识了一个网络连接。
+We notice the five-tuple: `<remoteAddress, remotePort, addressType, localAddress, localPort>`, which uniquely identifies a network connection.
 
-建立起全双工的 Socket 后，用户程序就可以监听 「data」事件，获取数据了。
+After establishing a full-duplex Socket, the user program can listen for the `data` event to obtain data.
 
-
-
-### 总结
-
-
-
-### 参考
+###

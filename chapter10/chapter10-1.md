@@ -1,7 +1,7 @@
 
 ## HTTP 1/2
 
-回到我们之前的 「Hello World」例子, 短短数行即可。
+Back to our previous "Hello World" example, it only takes a few lines of code.
 ```js
 const http = require('http');
 const hostname = '127.0.0.1';
@@ -15,10 +15,10 @@ http.createServer((req, res) => {
 });
 ```
 
-因为 Node.js 把许多细节都已在源码中封装好了，主要代码在 lib/_http_*.js 这些文件中，现在就让我们照着上述代码，看看从一个 HTTP 请求的到来直到响应，Node.js 都为我们在源码层做了些什么。
+Because Node.js has encapsulated many details in the source code, the main code is in the files lib/_http_*.js. Now let's follow the above code and see what Node.js has done for us at the source code level from the arrival of an HTTP request to the response.
 
 ### Server
-在 Node.js 中，若要收到一个 HTTP 请求，首先需要创建一个 http.Server 类的实例，然后监听它的 request 事件。由于 HTTP 协议属于应用层，在下层的传输层通常使用的是 TCP 协议，所以 net.Server 类正是 http.Server 类的父类。
+In Node.js, to receive an HTTP request, you first need to create an instance of the http.Server class and then listen for its request event. Since the HTTP protocol belongs to the application layer, the lower transport layer usually uses the TCP protocol, so the net.Server class is the parent class of the http.Server class.
 
 ```js
 // lib/_http_server.js
@@ -46,11 +46,11 @@ function Server(requestListener) {
 util.inherits(Server, net.Server);
 ```
 
-`requestListener` 回调函数作为观察者，监听了 `request` 事件， 默认超时时间为2分钟。
+The `requestListener` callback function acts as an observer and listens for the `request` event, with a default timeout of 2 minutes.
 
-而当连接建立时，观察者 connectionListener 处理 `connection` 事件。
+When the connection is established, the observer `connectionListener` handles the `connection` event.
 
-这时，则需要一个 HTTP parser 来解析通过 TCP 传输过来的数据：
+At this point, an HTTP parser is needed to parse the data transmitted through TCP:
 
 ```js
 // lib/_http_server.js
@@ -70,25 +70,24 @@ function connectionListener(socket) {
 
 #### HTTP Parser
 
-值得一提的是，parser 是从一个“池”中获取的，这个“池”使用了一种叫做 freelist的数据结构。
-为了尽可能的对 parser 进行重用，并避免了不断调用构造函数的消耗，且设有数量上限（http 模块中为 1000）。
+It is worth mentioning that the parser is obtained from a "pool", which uses a data structure called freelist. In order to reuse the parser as much as possible and avoid the cost of constantly calling the constructor, and there is a limit on the number (1000 in the http module).
 
-HTTPParser 的实现目前由 C++绑定实现，具体参见 deps/http_parser 目录。但笔者这边拓展一下：
+The implementation of HTTPParser is currently implemented by C++ binding. For details, see the deps/http_parser directory. But here I will expand a bit:
 
-社区有过对 http_parser 实现性能的争论， 性能上 JS 实现的版本超越 C 的实现。
+There has been a debate in the community about the performance of the http_parser implementation, and the JS implementation of performance surpasses the C implementation.
 
-原因是多方面的：
-* 去调了 C++ 绑定层。
-* JS 实现，避免了 C 栈和 JS 堆栈的切换和参数拷贝。
-* V8 JIT 对热点函数的优化。
+The reasons are many:
+* Removed the C++ binding layer.
+* JS implementation avoids switching between C stack and JS stack and parameter copying.
+* V8 JIT optimizes hot functions.
 
-即便有上述优势，社区目前还是没有合并，处于pending 状态，结合个人和社区观点：
-* 并发请求会导致 garbage collection 频繁，触发GC 停顿。
-* 可以作为第三方模块存在。
+Even with these advantages, the community has not yet merged and is in a pending state. Combining personal and community views:
+* Concurrent requests will cause frequent garbage collection and trigger GC pauses.
+* Can exist as a third-party module.
 
 > pull request: https://github.com/nodejs/node/pull/1457/
 
-这里的 parser 也是基于事件的，很符合 Node.js 的核心思想。
+The parser here is also event-based, which is in line with Node.js's core ideas.
 ```js
 // lib/_http_common.js
 // ...
@@ -117,15 +116,16 @@ function connectionListener(socket) {
   parser.onIncoming = parserOnIncoming;
 }
 ```
-所以一个完整的 HTTP 请求从接收到完全解析，会挨个经历 parser 上的如下事件监听器：
+So a complete HTTP request from receiving to complete parsing will go through the event listeners on the parser one by one:
 
-* parserOnHeaders：不断解析推入的请求头数据。
-* parserOnHeadersComplete：请求头解析完毕，构造 header 对象，为请求体创建 http.IncomingMessage 实例。
-* parserOnBody：不断解析推入的请求体数据。
-* parserOnExecute：请求体解析完毕，检查解析是否报错，若报错，直接触发 clientError 事件。若请求为 CONNECT 方法，或带有 Upgrade 头，则直接触发 connect 或 upgrade 事件。
-* parserOnIncoming：处理具体解析完毕的请求。
+* parserOnHeaders: Continuously parse the incoming request header data.
+* parserOnHeadersComplete: The request header is parsed, the header object is constructed, and the http.IncomingMessage instance is created for the request body.
+* parserOnBody: Continuously parse the incoming request body data.
+* parserOnExecute: After the request body is parsed, check whether the parsing reports an error. If an error is reported, the clientError event is triggered directly. If the request is a CONNECT method or has an Upgrade header, the connect or upgrade event is triggered directly.
+* parserOnIncoming: Handle the specific parsed request.
 
-前面提到的 `request`事件到底是在哪里触发的呢？回到源码
+Where is the `request` event triggered? Let's go back to the source code.
+
 
 ```js
 // lib/_http_server.js
@@ -162,23 +162,21 @@ function connectionListener(socket) {
 }
 ```
 
-我们注意到 2个队列，`incoming`和`outgoing`, 他们用于缓冲 IncomingMessage 实例和对应的 ServerResponse 实例。
-通过 `IncomingMessage`实例构建相应的 `ServerResponse` 实例, 并且通过 `res.assignSocket(socket);` ，绑定了
-三元组 `<req, res, socket>`。
+We notice two queues, `incoming` and `outgoing`, which are used to buffer IncomingMessage instances and their corresponding ServerResponse instances.
+By constructing the corresponding `ServerResponse` instance through the `IncomingMessage` instance, and binding the triple `<req, res, socket>` through `res.assignSocket(socket);`.
 
+Finally, the `request` event is sent with `req` and `res` as parameters. In the "Hello World" example, the listener receives `req` and `res`, writes the HTTP header and content to the response stream, and sends it out.
 
-最后，发送 request 事件，参数为req, res。回到 hello world 中，监听者拿到 req 和 res, 向 response 流中写入HTTP头
-和内容发送出去。
+### Summary
+Object pools are a derivative of memory pools and require a trade-off between memory and performance.
 
+The above only outlines a main line, and other aspects such as exception handling and security will be analyzed in subsequent chapters.
 
-### 总结
-对象池也是内存池的一种衍生，需要在内存和性能方面折中考量。
-
-上面只是梳理了一个主线，其他异常处理，安全等方面剖析后面的章节会一一解读。
-
-
-### 参考 
+### Reference
 * https://docs.google.com/document/d/1A3cxhZg2aktJeSGt0P-8KrA4WyG1c8LlPomQflaQs8s/edit
+```
+
+
 
 
 

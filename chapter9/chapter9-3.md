@@ -1,81 +1,80 @@
+
 ## Crypto
 
-### 什么是 SSL ？
-Secure Sockets Layer，这是其全名，他的作用是协议，定义了用来对网络发出的数据进行加密的格式和规则。
+### What is SSL?
+Secure Sockets Layer, this is its full name, its role is a protocol, which defines the format and rules for encrypting data sent over the network.
 
 ```js
       +------+                                            +------+
-服务器 | data | -- SSL 加密 --> 发送 --> 接收 -- SSL 解密 -- | data | 客户端 
+Server | data | -- SSL encryption --> Send --> Receive -- SSL decryption -- | data | Client 
       +------+                                            +------+   
 
       +------+                                            +------+
-服务器 | data | -- SSL 解密 --> 接收 <-- 发送 -- SSL 加密 -- | data | 客户端 
+Server | data | -- SSL decryption --> Receive <-- Send -- SSL encryption -- | data | Client 
       +------+                                            +------+
 ```
-> 注：TLS 1.0 等同于 SSL 3.1，TLS 1.1 等同于 SSL 3.2，TLS 1.2 等同于 SSL 3.3。
-
-
+> Note: TLS 1.0 is equivalent to SSL 3.1, TLS 1.1 is equivalent to SSL 3.2, and TLS 1.2 is equivalent to SSL 3.3.
 
 ### OpenSSL
-OpenSSL 是在程序上对 SSL 标准的一个实现，提供了：
+OpenSSL is an implementation of the SSL standard in the program, providing:
 
-* libcrypto 通用加密库
-* libssl TLS/SSL 的实现
-* openssl 命令行工具
+* libcrypto universal encryption library
+* libssl TLS/SSL implementation
+* openssl command line tool
 
-Node.js 是完全采用 OpenSSL 进行加密的，其相关的 TLS HTTPS 服务器模块和 Crypto 加密模块都是通过 C++ 在底层调用 OpenSSL 。
+Node.js is fully encrypted using OpenSSL, and its related TLS HTTPS server module and Crypto encryption module are called OpenSSL at the bottom layer through C++.
 
-OpenSSL 实现了对称加密:
+OpenSSL implements symmetric encryption:
 ```shell
 AES(128) | DES(64) | Blowfish(64) | CAST(64) | IDEA(64) | RC2(64) | RC5(64)
 ```
-非对称加密:
+Asymmetric encryption:
 ```shell
 DH | RSA | DSA | EC
 ```
-以及一些信息摘要:
+And some message digests:
 ```shell
 MD2 | MD5 | MDC2 | SHA | RIPEMD | DSS
 ```
-其中信息摘要是一些采用哈希算法的加密方式，也意味着这种加密是单向的，不能反向解密。这种方式的加密大多是用于保护安全口令，比如登录密码。这里面我们最长用的是 MD5 和 SHA (建议采用更稳定的 SHA1, MD5通过查表大法已经不再单向)。
+The message digest is a type of encryption that uses a hash algorithm, which means that this encryption is one-way and cannot be decrypted in reverse. This type of encryption is mostly used to protect secure passwords, such as login passwords. The most commonly used ones are MD5 and SHA (it is recommended to use more stable SHA1, MD5 is no longer one-way through the table lookup method).
 
-使用非对称加密会损耗性能，对称加密又不能在网络传输，那该怎么办呢？
-答案是:结合两者一起使用。`ssl/tls`实际上也是如此，`tls`将两者完美组合使用。
+Using asymmetric encryption will consume performance, and symmetric encryption cannot be transmitted on the network, so what should I do?
+The answer is: combine the two together. `ssl/tls` is actually the same, and `tls` combines the two perfectly.
 
-
-### TLS HTTPS 服务器
-想要建立一个 Node.js TLS 服务器，需要使用 tls 模块:
+### TLS HTTPS server
+To establish a Node.js TLS server, you need to use the tls module:
 
 `var Tls = require('tls');`
 
-在开始搭建服务器之前，我们还有些重要的工作要做，那就是证书，签名证书。
+Before starting to build the server, we have some important work to do, that is, certificates and signed certificates.
 
-基于 SSL 加密的服务器，在与客户端开始建立连接时，会发送一个签名证书。客户端在自己的内部存储了一些公认的权威证书认证机构，即 CA。客户端通过在自己的 CA 表中查找，来匹配服务器发送的证书上的签名机构，以此来判断面对的服务器是不是一个可信的服务器。
+Based on SSL encryption, when establishing a connection with the client, the server will send a signed certificate. The client stores some recognized authoritative certificate authentication agencies, that is, CA. The client matches the signature agency on the certificate sent by the server by looking up in its own CA table to determine whether the server facing is a trusted server.
 
-如果这个服务器发送的证书，上面的签名机构不在客户端的 CA 列表中，那么这个服务器很有可能是伪造的，你应该听说过“中间人攻击”。
+If the signature agency on the certificate sent by this server is not in the client's CA list, then this server is likely to be forged, and you should have heard of "man-in-the-middle attacks".
 
 ```js
 +------------+                                
-| 真正的服务器 |              选择权:连接？不连接？  +-------+
-+------------+             +------------------ | 客户端 |
+| Real server |              Choice: Connect? Not connected?  +-------+
++------------+             +------------------ | Client |
                     https  |                   +-------+
-+--------------+           | 拦截通信包       
-| 破坏者的服务器 | ----------+
-+--------------+  证书是伪造的
++--------------+           | Intercept communication packets       
+| Attacker's server | ----------+
++--------------+  The certificate is forged
 ```
 
 
 
-### 总结
-加密的安全性，主要是以下两种因素共同决定
+### Summary
+The security of encryption is mainly determined by the following two factors
 
-使用的加密算法
-* 密钥(key)的长度
-* 在相同的算法下，密钥长度增加一位，暴力破解的难度指数级增加。如果使用对称加密，现在AES-256足够安全。
+The encryption algorithm used
+* Length of key
+* Under the same algorithm, the difficulty of brute force cracking increases exponentially as the key length increases by one bit. If symmetric encryption is used, AES-256 is now secure enough.
 
-不过据说RSA的1024位密钥已经能被政府用非常昂贵的设备暴力破解，所以在使用RSA算法时，密钥长度要选2048，并没有决对的安全。
+However, it is said that the 1024-bit key of RSA can be brute-forced by the government with very expensive equipment, so when using the RSA algorithm, the key length should be selected as 2048, and there is no absolute security.
 
-加密的性能上， 
+In terms of encryption performance,
 
-### 参考
+### Reference
 * http://www.jianshu.com/p/a8b87e436ac7
+

@@ -1,11 +1,11 @@
 ## HTTP 2/2
 
-http 模块提供了两个函数 http.request 和 http.get，功能是作为客户端向 HTTP服务器发起请求。
+The http module provides two functions, http.request and http.get, which are used as clients to send requests to HTTP servers.
 
-这通常来实现自己的爬虫程序， 笔者自己写的一个爬取知乎的一个例子：https://github.com/yjhjstz/iZhihu
+This is usually used to implement web crawlers. Here is an example of a web crawler that I wrote to crawl Zhihu: https://github.com/yjhjstz/iZhihu
 
 
-### GET 例子
+### GET Example
 ```js
 const http = require("http")
 http.get('http://www.baidu.com', (res) => {
@@ -16,10 +16,11 @@ http.get('http://www.baidu.com', (res) => {
   console.log(`Got error: ${e.message}`);
 });
 ```
-上面的程序会返回一个200的状态码！
+The above program will return a status code of 200!
 
 ### HTTP Client
-Node.js 中，http.get 通过创建一个 `ClientRequest`的对象，建立与服务端的连接通信。
+In Node.js, http.get creates a `ClientRequest` object to establish a connection with the server.
+
 ```js
 // lib/_http_client.js
 function ClientRequest(options, cb) {
@@ -85,10 +86,9 @@ function ClientRequest(options, cb) {
 
 util.inherits(ClientRequest, OutgoingMessage);
 ```
-callback 通过 `self.once('response', cb);`, 监听了 response 事件。之后如果没有设置代理服务，则默认使用
-net 模块创建与服务器的连接。那么 response 事件是哪里发送的呢？
+The callback listens for the response event. If no proxy service is set, the net module is used to create a connection with the server. But where is the response event sent?
 
-下面我们看到比较重要的 `onSocket` 函数。
+Let's take a look at the important `onSocket` function.
 ```js
 ClientRequest.prototype.onSocket = function(socket) {
   process.nextTick(onSocketNT, this, socket);
@@ -104,8 +104,7 @@ function onSocketNT(req, socket) {
 }
 ```
 
-这边 onSocket 必须是一个异步函数，大家可以仔细体会下！ 同时 onSocketNT 会异常做了处理，当请求失败时，则发送 free 事件。
-否则来到 `tickOnSocket`。
+The onSocket function must be an asynchronous function. If the request fails, the free event is sent. Otherwise, it goes to `tickOnSocket`.
 
 ```js
 function tickOnSocket(req, socket) {
@@ -142,9 +141,9 @@ function tickOnSocket(req, socket) {
 }
 ```
 
-同 HTTP Server 类似，从池中申请一个解析器，用于解析 HTTP 协议， 到这一步说明连接已经建立，所以重新设置 error 事件的回调。
+Like the HTTP server, a parser is requested from the pool to parse the HTTP protocol. At this point, the connection has been established, so the error event callback is reset.
 
-同时设置 数据回调等，然后发送 `socket`事件, 来到 `parserOnIncomingClient`.
+Data callback is also set, and the `socket` event is sent to `parserOnIncomingClient`.
 
 ```js
 // client
@@ -189,16 +188,19 @@ function parserOnIncomingClient(res, shouldKeepAlive) {
 }
 ```
 
-在这里发送 response 事件，参数对象 `res` 上也挂上了 `req` 对象。这样 req 和 res 就相互引用。
+// Send the response event here, and the `req` object is also attached to the `res` object. This way, `req` and `res` reference each other.
 
-用户的 callback 终于得到回调。
+The user's callback is finally called.
 
-### 总结
-上面只是梳理了一个http client 主线， 实际我们很少使用该模块，而是使用第三方的 npm 包，比如
-* urllib (轻量级)
+### Summary
+The above only outlines the main line of the http client. In practice, we rarely use this module, but instead use third-party npm packages, such as:
+* urllib (lightweight)
 * request
 
 
-### 参考
+### Reference
+```
+
+
 
 

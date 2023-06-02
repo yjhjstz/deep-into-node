@@ -1,46 +1,45 @@
 
-## 网络 (Net)
+## Net
 
-### 网络模型
-ISO制定的OSI参考模型的过于庞大、复杂招致了许多批评。与此对照，由技术人员自己开发的TCP/
-IP协议栈获得了更为广泛的应用。如图所示，是TCP/IP参考模型和OSI参考模型的对比示意图。
+### Network Model
+The OSI reference model developed by ISO has been criticized for being too large and complex. In contrast, the TCP/IP protocol stack developed by technical personnel themselves has been more widely used. The following figure shows a comparison diagram of the TCP/IP reference model and the OSI reference model.
 
 ![NET](http://img.blog.csdn.net/20160324203556764)
 
 ### UDP vs TCP
-* TCP(Transmission Control Protocol)：传输控制协议
-* UDP(User Datagram Protocol)：用户数据报协议
+* TCP (Transmission Control Protocol): Transmission Control Protocol
+* UDP (User Datagram Protocol): User Datagram Protocol
 
-主要在于连接性(Connectivity)、可靠性(Reliability)、有序性(Ordering)、有界性(Boundary)、拥塞控制(Congestion or Flow control)、传输速度(Speed)、量级(Heavy/Light weight)、头部大小(Header size)等差异。
+The main differences are in connectivity, reliability, ordering, boundary, congestion or flow control, transmission speed, weight, and header size.
 
-#### 主要差异：
-* TCP是面向连接(Connection oriented)的协议，UDP是无连接(Connection less)协议；
-  * TCP用三次握手建立连接：1) Client向server发送SYN；2) Server接收到SYN，回复Client一个SYN-ACK；3)Client接收到SYN_ACK，回复Server一个ACK。到此，连接建成。UDP发送数据前不需要建立连接。
+#### Main differences:
+* TCP is a connection-oriented protocol, while UDP is a connectionless protocol;
+  * TCP uses a three-way handshake to establish a connection: 1) The client sends a SYN to the server; 2) The server receives the SYN and replies to the client with a SYN-ACK; 3) The client receives the SYN-ACK and replies to the server with an ACK. At this point, the connection is established. UDP does not need to establish a connection before sending data.
   ![](http://p.blog.csdn.net/images/p_blog_csdn_net/ruimingde/492389/o_tcp三次握手.bmp)
 
 
-* TCP可靠，UDP不可靠；
-  * TCP丢包会自动重传，UDP不会。
+* TCP is reliable, while UDP is unreliable;
+  * TCP will automatically retransmit lost packets, while UDP will not.
 
 
-* TCP有序，UDP无序；
-  * 消息在传输过程中可能会乱序，后发送的消息可能会先到达，TCP会对其进行重排序，UDP不会。
+* TCP is ordered, while UDP is unordered;
+  * Messages may be out of order during transmission, and later messages may arrive first. TCP will reorder them, while UDP will not.
 
-从程序实现的角度来看，可以用下图来进行描述。
+From the perspective of program implementation, the following figure can be used to describe it.
 
 ![](http://img.my.csdn.net/uploads/201303/15/1363304870_3150.jpg)
 
-从上图也能清晰的看出，TCP通信需要服务器端侦听listen、接收客户端连接请求accept，等待客户端connect建立连接后才能进行数据包的收发（recv/send）工作。而UDP则服务器和客户端的概念不明显，服务器端即接收端需要绑定端口，等待客户端的数据的到来。后续便可以进行数据的收发（recvfrom/sendto）工作。
+From the above figure, it can be seen clearly that TCP communication requires the server-side listening to listen, receiving the client connection request to accept, waiting for the client to connect to establish a connection before receiving and sending data packets (recv/send). UDP does not have a clear concept of server and client. The server-side receiving end needs to bind the port and wait for the client's data to arrive. Subsequently, data reception and transmission (recvfrom/sendto) can be performed.
 
-### Socket 抽象
-Socket 是对 TCP/IP 协议族的一种封装，是应用层与TCP/IP协议族通信的中间软件抽象层。它把复杂的TCP/IP协议族隐藏在Socket接口后面，对用户来说，一组简单的接口就是全部，让Socket去组织数据，以符合指定的协议。
+### Socket abstraction
+Socket is a encapsulation of the TCP/IP protocol family, which is a middle software abstraction layer for communication between the application layer and the TCP/IP protocol family. It hides the complex TCP/IP protocol family behind the Socket interface. For users, a set of simple interfaces is everything, and Socket organizes data to conform to the specified protocol.
 
-Socket 还可以认为是一种网络间不同计算机上的进程通信的一种方法，利用三元组（ip地址，协议，端口）就可以唯一标识网络中的进程，网络中的进程通信可以利用这个标志与其它进程进行交互。
+Socket can also be regarded as a method of inter-process communication between processes on different computers in the network. The triplet (IP address, protocol, port) can uniquely identify the process in the network, and the process communication in the network can use this mark to interact with other processes.
 
-Socket 起源于 Unix ，Unix/Linux 基本哲学之一就是“一切皆文件”，都可以用“打开(open) –> 读写(write/read) –> 关闭(close)”模式来进行操作。因此 Socket 也被处理为一种特殊的文件。
+Socket originated from Unix, and one of the basic philosophies of Unix/Linux is "everything is a file". All operations can be performed using the "open (open) -> read/write (write/read) -> close (close)" mode. Therefore, Socket is also treated as a special file.
 
-#### C++层绑定
-TCP的绑定导出：
+#### C++ binding
+TCP binding export:
 ```c++
 void TCPWrap::Initialize(Local<Object> target,
                          Local<Value> unused,
@@ -150,31 +149,25 @@ function Socket(options) {
 }
 util.inherits(Socket, stream.Duplex);
 ```
-首先 `Socket` 是一个全双工的 Stream，所以继承了 Duplex。通过 `createHandle` 创建套接字并赋值到
-`this._handle`上。
+The `Socket` class is a full-duplex stream that inherits from `Duplex`. It creates a socket using `createHandle` and assigns it to `this._handle`.
 
-同时监听 `finish`, `_socketEnd`事件， 
+It also listens for the `finish` and `_socketEnd` events.
 
+### Packet Concatenation
+Packet concatenation typically occurs during stream transmission, as TCP is a stream-based protocol. Additionally, network MTU values are often smaller than the message data being processed by the application, which can cause a single data reception to not fully represent a complete message. The only way to handle packet concatenation is to define an application-layer data communication protocol that specifies whether the received data meets the needs of the message data.
 
+#### Analysis
+TCP packet concatenation usually occurs during stream transmission, while UDP does not have packet concatenation because UDP has message boundaries. When sending a data segment using the TCP protocol, the data segment needs to wait for the buffer to be full before sending the data. When the buffer is full, it may not be a single message, but several messages that exist in the buffer. In order to optimize performance (Nagle's algorithm), TCP combines these small data packets into a large data packet, causing packet concatenation. In addition, if the receiving end of the data cannot receive the packets in the buffer in time, it will also cause multiple packets in the buffer to be combined and received, which is also packet concatenation.
 
-### 粘包
-> 一般所谓的TCP粘包是在一次接收数据不能完全地体现一个完整的消息数据。TCP通讯为何存在粘包呢？主要原因是TCP是以流的方式来处理数据，再加上网络上MTU的值往往小于在应用处理的消息数据，所以就会引发一次接收的数据无法满足消息的需要，导致粘包的存在。处理粘包的唯一方法就是制定应用层的数据通讯协议，通过协议来规范现有接收的数据是否满足消息数据的需要。
+#### Solutions
+* Define a custom application-layer protocol;
+* Do not use the Nagle algorithm, use the provided API: `socket.setNoDelay`.
 
-#### 情况分析
+#### UDP
+##### Multicast
+* https://en.wikipedia.org/wiki/Multicast#IP_multicast
 
-TCP粘包通常在流传输中出现，UDP则不会出现粘包，因为UDP有消息边界。使用TCP协议发送数据段需要等待缓冲区满了才将数据发送出去，当满的时候有可能不是一条消息而是几条消息存在于缓冲区内，为了优化性能（Nagle算法），TCP会将这几个小数据包合并为一个大的数据包，造成粘包；另外在接收数据端，如果没能及时接收缓冲区的包，也会造成缓冲区多包合并接收，这也是粘包。
-
-#### 解决办法
-
-* 自定义应用层协议；
-* 不使用Nagle算法, 使用提供的 API：`socket.setNoDelay`。
-
-
-### UDP
-#### 组播
-* https://en.wikipedia.org/wiki/Multicast#IP_multicast%EF%BC%89%EF%BC%8C%E5%85%B7
-
-#### UDP Socket
+##### UDP Socket
 ```js
 function Socket(type, listener) {
   EventEmitter.call(this);
@@ -202,14 +195,14 @@ function Socket(type, listener) {
 util.inherits(Socket, EventEmitter);
 ```
 
-UDP 继承了 `EventEmitter`, 同样也支持 IPV4和 IPV6协议， 由`type`区分，
-`this._reuseAddr` 标识是否要使用选项：`SO_REUSEADDR`。
+UDP inherits from `EventEmitter` and also supports IPV4 and IPV6 protocols, distinguished by `type`. `this._reuseAddr` indicates whether to use the `SO_REUSEADDR` option.
 
-SO_REUSEADDR允许完全重复的捆绑：当一个IP地址和端口绑定到某个套接口上时，还允许此IP地址和端口捆绑到另一个套接口上。一般来说，这个特性仅在支持多播的系统上才有，而且只对UDP套接口而言（TCP不支持多播）。
+SO_REUSEADDR allows for completely duplicate binding: when an IP address and port are bound to a socket, this IP address and port can also be bound to another socket. Generally, this feature is only available on systems that support multicast, and only for UDP sockets (TCP does not support multicast).
 
-### 总结
-从笔者的经验看，尽量不要尝试去使用 `UDP`，除非你知道丢包了对于应用是没有影响的，否则排查网络丢包会使人崩溃的！
+### Summary
+From my experience, try not to use `UDP` unless you know that packet loss has no impact on the application, otherwise troubleshooting network packet loss will drive you crazy!
 
-
-### 参考
+### References
 * https://en.wikipedia.org/wiki/Nagle's_algorithm
+
+

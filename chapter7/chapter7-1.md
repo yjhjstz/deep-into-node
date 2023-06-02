@@ -2,32 +2,33 @@
 ## Event
 > Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient.
 
-这是Node.Js官网对自身的介绍,明确强调了Node.Js使用了一个事件驱动、非阻塞式 I/O 的模型,使其轻量又高效。
-
-而且在Node中大量核心模块都使用了Event的机制,因此可以说是整个Node里最重要的模块之一.
+Node.js emphasizes its event-driven, non-blocking I/O model, which makes it lightweight and efficient. This event-driven model is used extensively in many core modules of Node.js, making it one of the most important modules in the entire Node.js ecosystem.
 
 
-### 涉及源码
+
+### Related Source Code
 - [lib/events.js](https://github.com/nodejs/node/blob/v6.0.0/lib/events.js)
 
-### 观察者模式
-
+### Observer Pattern
 
 ![](https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Observer.svg/854px-Observer.svg.png)
 
-上图是 UML 的类图，
+The above diagram is a UML class diagram.
 
-观察者模式是这样一种设计模式。一个被称作被观察者的对象，维护一组被称为观察者的对象，这些对象依赖于被观察者，被观察者自动将自身的状态的任何变化通知给它们。
+The observer pattern is a design pattern in which an object, called the subject, maintains a list of its dependents, called observers, and notifies them automatically of any state changes, usually by calling one of their methods. 
 
-当一个被观察者需要将一些变化通知给观察者的时候，它将采用广播的方式，这条广播可能包含特定于这条通知的一些数据。
+When a subject needs to notify observers about something interesting happening, it broadcasts a notification to the observers (which can include specific data related to the topic of the notification).
 
-使用观察者模式更深层次的动机是，当我们需要维护相关对象的一致性的时候，我们可以避免对象之间的紧密耦合。例如，一个对象可以通知另外一个对象，而不需要知道这个对象的信息。
+The deeper motivation for using the observer pattern is to avoid tight coupling between objects when we need to maintain consistency between related objects. For example, an object can notify another object without knowing anything about that object.
 
-### Event.js 实现
-EventEmitter 允许我们注册一个或多个函数作为 listeners。 在特定的事件触发时被调用。如下图：
+
+
+### Event.js Implementation
+EventEmitter allows us to register one or more functions as listeners, which are called when a specific event is triggered. As shown in the following diagram:
 ![](https://github.com/yjhjstz/deep-into-node/blob/master/chapter7/2016-05-09%2014.13.19.png)
-#### listeners 存储
-一般观察者的设计模式的实现逻辑是类似的，都是有一个类似map的结构，存储监听事件和回调函数的对应关系。
+#### Listeners Storage
+The implementation logic of the observer design pattern is generally similar, with a map-like structure that stores the corresponding relationship between the listening event and the callback function.
+
 ```js
 // This constructor is used to store event handlers. Instantiating this is
 // faster than explicitly calling `Object.create(null)` to get a "clean" empty
@@ -44,16 +45,17 @@ EventEmitter.init = function() {
   this._maxListeners = this._maxListeners || undefined;
 };
 ```
-在 EventEmitter 类中，以 键 / 值 对的方式来存储事件名和对应的监听器。
-你可以会好奇，为什么创建一个最简单的 键 / 值 对搞的这么复杂，简单的一个
-`this._events = {};` 不就好咯。
+In the EventEmitter class, events and their corresponding listeners are stored as key-value pairs. You may wonder why creating a simple key-value pair is so complicated, and why not just use `this._events = {};`.
 
-是的，社区的最初实现是这样的，但随着 V8的升级，对 ES6支持的越来越完备，它的实现办法是使用一个空的构造函数，并且把这个构造的原型事先置空。
+Indeed, the initial implementation in the community was like this, but with the upgrade of V8 and the increasing support for ES6, the implementation method is to use an empty constructor and pre-set the prototype of this constructor to null.
 
-通过jsperf 比较两者的性能, 我们发现这种实现竟是简单实现性能的2倍！
+Through jsperf comparison of the two implementations, we found that this implementation is twice as fast as the simple implementation!
 
-#### 增加事件监听
-addListener: 增加事件监听, on： addListener的别名，实际上是一样的。
+
+
+#### Add Event Listener
+addListener: Add event listener, on: Alias of addListener, they are actually the same.
+
 ```js
 210 function _addListener(target, type, listener, prepend) {
 211   var m;
@@ -97,12 +99,13 @@ addListener: 增加事件监听, on： addListener的别名，实际上是一样
 267 }
 
 ```
-实际使用复杂场景时，会出现对回调顺序的需求。L250,默认添加监听是在事件监听数组的末尾。L247-L248，`prepend`标记是否在事件数组的前部添加。
 
-> 深入了解 https://github.com/nodejs/node/pull/6032
+When using in complex scenarios, there may be a need for callback order. L250, the default is to add the listener to the end of the event listener array. L247-L248, the `prepend` flag indicates whether to add to the front of the event array.
 
-#### 删除事件监听
-在 EventEmitter#removeListener 这个 API 的实现里，需要从存储的监听器数组中除去一个元素，我们首先想到的就是使用 Array#splice 这个 API ，即 arr.splice(i, 1) 。不过这个 API 所提供的功能过于多了，它支持去除自定义数量的元素，还支持向数组中添加自定义的元素。所以，源码中选择自己实现一个最小可用的：
+> Learn more at https://github.com/nodejs/node/pull/6032
+#### Removing Event Listeners
+In the implementation of the EventEmitter#removeListener API, we need to remove an element from the stored listener array. Our first thought is to use the Array#splice API, i.e. arr.splice(i, 1). However, this API provides too much functionality, supporting the removal of a custom number of elements and the addition of custom elements to the array. Therefore, the source code chooses to implement the minimum usable one:
+
 ```js
 function spliceOne(list, index) {
   for (var i = index, k = i + 1, n = list.length; k < n; i += 1, k += 1)
@@ -110,10 +113,13 @@ function spliceOne(list, index) {
   list.pop();
 }
 ```
-性能是原生调用的1.5倍。
+The performance is 1.5 times faster than the native call.
 
-#### 事件触发
-在事件触发时，监听器拥有的参数数量是任意的。
+
+
+#### Event Triggering
+When an event is triggered, the number of arguments that the listener has is arbitrary.
+
 ```js
 136 EventEmitter.prototype.emit = function emit(type) {
 137   var er, handler, len, args, i, events, domain;
@@ -154,16 +160,16 @@ function spliceOne(list, index) {
 206   ...
 207   return true;
 ```
-把不定参数的函数调用转变成固定参数的函数调用，且最多支持到三个参数。超过3个参数则调用`emitMany`.
-结果不言而喻，我们还是比较下会差多少，以三个参数为例：
-jsperf 显示的性能差距在1倍左右。
 
-> 深入了解 https://github.com/iojs/io.js/pull/601
+Convert function calls with variable parameters into fixed-parameter function calls, and support up to three parameters. If there are more than 3 parameters, 'emitMany' is called. The result is self-evident, let's still compare how much worse it will be, taking three parameters as an example: jsperf shows a performance gap of about 1x.
 
+> Learn more at https://github.com/iojs/io.js/pull/601
 
 
-### event在node中的应用
-#### 监控文件变化，通知感兴趣的观察者。
+
+### The Application of Events in Node.js
+#### Monitor file changes and notify interested observers.
+
 
 ```js
 1389 function FSWatcher() {
@@ -190,15 +196,18 @@ jsperf 显示的性能差距在1倍左右。
 1410 util.inherits(FSWatcher, EventEmitter);
 ```
 
-L1410, FSWatcher 对象继承 EventEmitter，使自身有了EventEmitter的方法。
-L1404， 当底层发生错误时，会发出通知事件 `error`。
-L1406， 文件发生变化时，FSWatcher 对象发射 `change`事件，具体的变化由 *event*标识，*filename*标识文件名。
+L1410, FSWatcher object inherits EventEmitter, which gives it access to EventEmitter's methods.
+L1404, When an error occurs in the underlying system, a notification event 'error' is emitted.
+L1406, When a file changes, the FSWatcher object emits a 'change' event, with the specific change identified by *event* and the *filename* indicating the name of the file.
 
-L1396, 挂在`FSEvent`对象上的方法 `onchange`作为 C++调用 Javascript 的回调，在不同的平台实现方式也不一样，
-我们在文件系统章节将详细讲述。
+L1396, The method 'onchange' attached to the 'FSEvent' object serves as a callback for C++ to call Javascript, with different implementation methods on different platforms.
+We will discuss this in detail in the file system chapter.
 
-上述是 fs 模块监听文件变化的实现，并导出API: `fs.watch()` 给外部使用，另外还有一个 `fs.watchFile()`。
-我们查看官方文档：
+The above is the implementation of file change monitoring in the fs module, which exports the API: `fs.watch()` for external use, as well as `fs.watchFile()`.
+Let's take a look at the official documentation:
+```
+
+
 
 > fs.watchFile(filename, [options], listener)
 
@@ -210,12 +219,11 @@ L1396, 挂在`FSEvent`对象上的方法 `onchange`作为 C++调用 Javascript �
 
 > Stability: 2 - Unstable. Not available on all platforms.
 
-- fs.watch() 官方建议使用。
-- fs.watch() 并不是全平台支持，只有 OSX 和 Windows 支持recursive选项。
-- fs.watch() 监听文件或目录， fs.watchFile() 监听文件。
+- fs.watch() is recommended by official documentation.
+- fs.watch() is not available on all platforms, and only supports the 'recursive' option on OSX and Windows.
+- fs.watch() is used to monitor files or directories, while fs.watchFile() is used to monitor files.
 
-
-fs.watch() 如果传入 listener, 如下：
+If a listener is passed to fs.watch(), like this:
 ```js
 fs.watch('somedir', function (event, filename) {
   console.log('event is: ' + event);
@@ -224,7 +232,7 @@ fs.watch('somedir', function (event, filename) {
   }
 });
 ```
-则默认添加函数 callback 到 `change`事件的观察者中。当然也可以换个姿势，如：
+then the callback function is added to the observers of the 'change' event by default. Of course, you can also use a different approach, such as:
 
 ```js
 var watcher = fs.watch('somedir');
@@ -237,12 +245,13 @@ watcher.on('change', function (event, filename) {
   
 })
 ```
-可以实现链式调用, 比如符合目前很火的Reactive Programming。
-RP编程范式提高了编码的抽象程度，你可以更好地关注在商业逻辑中各种事件的联系避免大量细节而琐碎的实现，使得编码更加简洁。
+This allows for chain calls, which is in line with the currently popular Reactive Programming paradigm.
+The RP programming paradigm improves the abstraction level of coding, allowing you to better focus on the relationship between various events in business logic, avoiding a large number of trivial and tedious implementations, making coding more concise.
 
-#### 逐行读取 (Readline)
+#### Reading Line by Line (Readline)
 
-我们来看看逐行读取对键盘输入的处理， 这涉及到比较复杂的状态机和事件发送，是学习事件模块非常好的一个例子。
+Let's take a look at how readline handles keyboard input, which involves a complex state machine and event sending, making it a great example for learning the event module.
+
 
 ```js
  212 Interface.prototype._onLine = function(line) {
@@ -256,9 +265,7 @@ RP编程范式提高了编码的抽象程度，你可以更好地关注在商业
  220   }
  221 };
 ```
-如果没有预先设定指定的query，然后用户应答后触发指定的callback，那么 `Interface`对象会触发 `line`事件。
-在 input 流接受了一个 `\n` 时触发，通常在用户敲击回车或者返回时接收。 这是一个监听用户输入的利器。
-监听 line 事件的示例:
+If no specific query is set in advance and a specified callback is triggered after the user responds, the `Interface` object will trigger the `line` event. This event is triggered when the input stream receives a `\n`, usually when the user hits enter or return. It is a powerful tool for listening to user input. An example of listening to the `line` event is:
 
 ```js
 var readline = require('readline');
@@ -271,7 +278,8 @@ rl.on('line', function (cmd) {
 });
 ```
 
-该模块对复合功能按键，比如 Ctrl + c, Ctrl + z也做了相应的处理, 我们拿对 Ctrl + c 的代码进行分析：
+This module also handles composite function keys, such as Ctrl + c and Ctrl + z. Let's analyze the code for Ctrl + c:
+
 ```js
  678 Interface.prototype._ttyWrite = function(s, key) {
  679   key = key || {};
@@ -306,20 +314,22 @@ rl.on('line', function (cmd) {
  708     省略...
  709 }
 ```
-- L681-L682, 忽略 `ESC` 键。
-- L684, 首先判断是否是 Ctrl 和 Shift复合键同时按下，如果是则L685-L694优先处理。
-- L696, 如果是按下 Ctrl 键，L699 继续判断，如果另一个是 `c` , 默认是关闭对象。 
-- L701, 如果外部有观察者, 则发送 `SIGINT`事件，交由观察者处理。
+- L681-L682, Ignore the `ESC` key.
+- L684, First, determine if the Ctrl and Shift composite keys are pressed at the same time. If so, L685-L694 are processed first.
+- L696, If the Ctrl key is pressed, continue to judge at L699. If the other is `c`, the object is closed by default.
+- L701, If there are external observers, send the `SIGINT` event to be handled by the observer.
+
 
 
 #### REPL
-一个 Read-Eval-Print-Loop（REPL，读取-执行-输出循环）既可用于独立程序也可很容易地被集成到其它程序中。REPL 提供了一种交互地执行 JavaScript 并查看输出的方式。它可以被用作调试、测试或仅仅尝试某些东西。
+A Read-Eval-Print-Loop (REPL) can be used for standalone programs or easily integrated into other programs. The REPL provides an interactive way to execute JavaScript and view output. It can be used for debugging, testing, or just trying something out.
 
-在命令行中不带任何参数执行 node 您便会进入 REPL。它提供了一个简单的 Emacs 行编辑。
+When you execute node without any parameters in the command line, you will enter the REPL. It provides a simple Emacs line editor.
 
-REPLServer 继承 Interface，如代码所示： `inherits(REPLServer, rl.Interface);`
+REPLServer inherits from Interface, as shown in the code: `inherits(REPLServer, rl.Interface);`
 
-并监听 line 事件, 自定义关键字，以支持交互式的命令。
+It listens for the line event and customizes keywords to support interactive commands.
+
 ```shell
 $ NODE_DEBUG=REPL node
 REPL 37391: line ".help"
@@ -331,8 +341,9 @@ load  Load JS from a file into the REPL session
 save  Save all evaluated commands in this REPL session to a file
 ```
 
-我们看下代码实现：
-```js
+Let's take a look at the code implementation:
+
+```
 399   self.on('line', function(cmd) {
  400     debug('line %j', cmd);
  401     sawSIGINT = false;
@@ -361,32 +372,29 @@ save  Save all evaluated commands in this REPL session to a file
  424     ...
  425   }
 ```
-- L400， 通过设置环境变量NODE_DEBUG=REPL打开调试功能。
-- L407， 解析 cmd 输入， 处理正则的情况。
-- L412, 查看是否以 `.`开头，并且不是浮点数，则利用正则匹配字符串，
-   - 以 .help 为例，得到的 `matches` 为 `[ '.help', 'help', '', index: 0, input: '.help' ]`，
-     keyword 为 help, rest 为 ''.
-- L416, 通过 keyword 从 commands 对象找到对应的方法执行。
+- L400, Enable debugging by setting the environment variable NODE_DEBUG=REPL.
+- L407, Parse the input cmd and handle regular expressions.
+- L412, Check if the input starts with a `.` and is not a floating point number. If so, use regular expressions to match the string.
+  - For example, for `.help`, `matches` will be `[ '.help', 'help', '', index: 0, input: '.help' ]`, where keyword is `help` and rest is an empty string.
+- L416, Find the corresponding method from the `commands` object using the keyword and execute it.
 
 
 
-#### REPL实例
-一个在curl(1)上运行的REPL实例的例子可以查看这里： https://gist.github.com/2053342
-
+#### Example of a REPL Instance
+An example of a REPL instance running on curl(1) can be found here: https://gist.github.com/2053342
 
 
 ### EventEmitter vs Callbacks
 - EventEmitter
-  - 可以通知多个listeners
-  - 一般被调用多次。
+  - Can notify multiple listeners
+  - Generally called multiple times.
 - Callback
-  - 最多通知一个listener
-  - 通常被调用一次，无论操作是成功还是失败。
+  - Can notify at most one listener
+  - Usually called once, regardless of whether the operation is successful or not.
 
-### 总结
-Event 模块是观察者设计模式的典型应用。同时也是Reactive Programming的精髓所在。
+### Summary
+The Event module is a typical application of the Observer design pattern. It is also the essence of Reactive Programming.
 
-
-### 参考
+### References
 [1].https://segmentfault.com/a/1190000005051034
 

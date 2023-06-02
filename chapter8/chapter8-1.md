@@ -1,14 +1,12 @@
 
-## Stream 流
+## Stream
 
+Streams have been a part of the Unix programming environment since the early days, and over the past few decades they have proven to be a reliable way to break a large system into small, composable parts that work together perfectly. In Unix, we use the `|` symbol to implement streams. In Node, the built-in [stream module](http://nodejs.org/docs/latest/api/stream.html) has been used by multiple core modules and can also be used by user-defined modules. Like Unix, the basic operator of the stream module in Node is called `.pipe()`, and you can also use a backpressure mechanism to deal with objects that consume data slowly.
 
-从[早先的unix](http://www.youtube.com/watch?v=tc4ROCJYbm0)开始，stream便开始进入了人们的视野，在过去的几十年的时间里，它被证明是一种可依赖的编程方式，它可以将一个大型的系统拆成一些很小的部分，并且让这些部分之间完美地进行合作。在unix中，我们可以使用`|`符号来实现流。在node中，node内置的[stream模块](http://nodejs.org/docs/latest/api/stream.html)已经被多个核心模块使用，同时也可以被用户自定义的模块使用。和unix类似，node中的流模块的基本操作符叫做`.pipe()`，同时你也可以使用一个后压机制来应对那些对数据消耗较慢的对象。
+### Why Use Streams
 
+In Node, I/O is asynchronous, so interacting with the disk and network involves passing callback functions. You may have written code like this before:
 
-
-### 为什么应该使用流
-
-在node中，I/O都是异步的，所以在和硬盘以及网络的交互过程中会涉及到传递回调函数的过程。你之前可能会写出这样的代码：
 ```js
 	var http = require('http');
 	var fs = require('fs');
@@ -20,11 +18,13 @@
 	});
 	server.listen(8000);
 ```
-上面的这段代码并没有什么问题，但是在每次请求时，我们都会把整个`data.txt`文件读入到内存中，然后再把结果返回给客户端。想想看，如果`data.txt`文件非常大，在响应大量用户的并发请求时，程序可能会消耗大量的内存，这样很可能会造成用户连接缓慢的问题。
 
-其次，上面的代码可能会造成很不好的用户体验，因为用户在接收到任何的内容之前首先需要等待程序将文件内容完全读入到内存中。
+The above code is not problematic, but each time a request is made, we read the entire `data.txt` file into memory and then return the result to the client. Think about it, if the `data.txt` file is very large, when responding to a large number of concurrent user requests, the program may consume a lot of memory, which may cause slow user connections.
 
-所幸的是，`(req,res)`参数都是流对象，这意味着我们可以使用一种更好的方法来实现上面的需求：
+Secondly, the above code may cause a very bad user experience, because users need to wait for the program to read the file content into memory before receiving any content.
+
+Fortunately, `(req, res)` parameters are stream objects, which means we can use a better way to achieve the above requirements:
+
 ```js
 	var http = require('http');
 	var fs = require('fs');
@@ -35,11 +35,13 @@
 	});
 	server.listen(8000);
 ```
-在这里，`.pipe()`方法会自动帮助我们监听`data`和`end`事件。上面的这段代码不仅简洁，而且`data.txt`文件中每一小段数据都将源源不断的发送到客户端。
 
-除此之外，使用`.pipe()`方法还有别的好处，比如说它可以自动控制后端压力，以便在客户端连接缓慢的时候node可以将尽可能少的缓存放到内存中。
+Here, the `.pipe()` method will automatically help us listen for the `data` and `end` events. The above code is not only concise, but also sends each small piece of data in the `data.txt` file to the client continuously.
 
-想要将数据进行压缩？我们可以使用相应的流模块完成这项工作!
+In addition, using the `.pipe()` method has other benefits, such as automatically controlling the backend pressure so that node can put as little cache as possible in memory when the client connection is slow.
+
+Want to compress data? We can use the corresponding stream module to complete this task!
+
 ```js
 	var http = require('http');
 	var fs = require('fs');
@@ -50,57 +52,57 @@
 	    stream.pipe(oppressor(req)).pipe(res);
 	});
 	server.listen(8000);
-```	
-通过上面的代码，我们成功的将发送到浏览器端的数据进行了gzip压缩。我们只是使用了一个oppressor模块来处理这件事情。
+```
 
-一旦你学会使用流api，你可以将这些流模块像搭乐高积木或者像连接水管一样拼凑起来，从此以后你可能再也不会去使用那些没有流API的模块获取和推送数据了。
+With the above code, we successfully compressed the data sent to the browser using gzip. We just used an oppressor module to handle this.
 
-### 流模块基础
+Once you learn to use the stream API, you can assemble these stream modules like building Lego blocks or connecting water pipes, and you may never use modules without stream APIs to get and push data again.
 
-nodejs 底层一共提供了4个流， Readable 流、Writable 流、Duplex 流和 Transform 流。
+### Stream Module Basics
 
+Nodejs provides a total of 4 streams at the bottom, Readable stream, Writable stream, Duplex stream, and Transform stream.
 
-使用情景 |	类 | 	需要重写的方法
+Usage scenario |	Class |	Method to be rewritten
 -------| ------| -------------
-只读 |	Readable| 	_read
-只写	| Writable	| _write
-双工	| Duplex |	_read, _write
-操作被写入数据，然后读出结果|	Transform|	_transform, _flush
+Read only |	Readable| 	_read
+Write only	| Writable	| _write
+Duplex	| Duplex |	_read, _write
+Operate on written data and then read the result|	Transform|	_transform, _flush
 
 
 #### pipe
 
-无论哪一种流，都会使用`.pipe()`方法来实现输入和输出。
+Regardless of which stream, the `.pipe()` method is used to implement input and output.
 
-`.pipe()`函数很简单，它仅仅是接受一个源头`src`并将数据输出到一个可写的流`dst`中：
+The `.pipe()` function is very simple. It only accepts a source `src` and outputs the data to a writable stream `dst`:
 
 	src.pipe(dst)
 
-`.pipe(dst)`将会返回`dst`因此你可以链式调用多个流:
+`.pipe(dst)` will return `dst`, so you can chain multiple streams:
 
 	a.pipe(b).pipe(c).pipe(d)
 
-上面的代码也可以等价为：
+The above code can also be equivalent to:
 
 	a.pipe(b);
 	b.pipe(c);
 	c.pipe(d);
 	
-这和你在unix中编写流代码很类似：
+This is very similar to writing stream code in Unix:
 
 	a | b | c | d
 
-只不过此时你是在node中编写而不是在shell中！
+Except that you are writing in Node instead of in the shell!
 
-### readable流
+### Readable Stream
 
-Readable流可以产出数据，你可以将这些数据传送到一个writable，transform或者duplex流中，只需要调用`pipe()`方法:
+A Readable stream can produce data, and you can send this data to a writable, transform, or duplex stream by calling the `pipe()` method:
 
 	readableStream.pipe(dst)
 
-#### 创建一个readable流
+#### Creating a Readable Stream
 
-现在我们就来创建一个readable流！
+Now let's create a readable stream!
 
 	var Readable = require('stream').Readable;
 
@@ -111,21 +113,20 @@ Readable流可以产出数据，你可以将这些数据传送到一个writable�
 
 	rs.pipe(process.stdout);
 
-下面运行代码：
+The effect of running the code is as follows:
 
 	$ node read0.js
 	beep boop
 
-在上面的代码中`rs.push(null)`的作用是告诉`rs`输出数据应该结束了。
+In the above code, the role of `rs.push(null)` is to tell `rs` that the output data should end.
 
-需要注意的一点是我们在将数据输出到`process.stdout`之前已经将内容推送进readable流`rs`中，但是所有的数据依然是可写的。
+One thing to note is that we have already pushed the content into the readable stream `rs` before outputting the data to `process.stdout`, but all the data is still writable.
 
-这是因为在你使用`.push()`将数据推进一个readable流中时，一直要到另一个东西来消耗数据之前，数据都会存在一个缓存中。
+This is because when you use `.push()` to push data into a readable stream, the data will be stored in a cache until another thing consumes the data.
 
-然而，在更多的情况下，我们想要的是当需要数据时数据才会产生，以此来避免大量的缓存数据。
+However, in most cases, what we want is for the data to be generated only when it is needed, in order to avoid a large amount of cached data.
 
-我们可以通过定义一个`._read`函数来实现按需推送数据:
-
+```
 	var Readable = require('stream').Readable;
 	var rs = Readable();
 
@@ -136,19 +137,23 @@ Readable流可以产出数据，你可以将这些数据传送到一个writable�
 	};
 
 	rs.pipe(process.stdout);
-
-代码的运行结果如下所示:
+```
+The output of the code is as follows:
 
 	$ node read1.js
 	abcdefghijklmnopqrstuvwxyz
 
-在这里我们将字母`a`到`z`推进了rs中，但是只有当数据消耗者出现时，数据才会真正实现推送。
+In the above code, the role of `rs.push(null)` is to tell `rs` that the output data should end.
 
-`_read`函数也可以获取一个`size`参数来指明消耗者想要读取多少比特的数据，但是这个参数是可选的。
+One thing to note is that we have already pushed the content into the readable stream `rs` before outputting the data to `process.stdout`, but all the data is still writable.
 
-需要注意到的是你可以使用`util.inherit()`来继承一个Readable流。
+This is because when you use `.push()` to push data into a readable stream, the data will be stored in a cache until another thing consumes the data.
 
-为了说明只有在数据消耗者出现时，`_read`函数才会被调用，我们可以将上面的代码简单的修改一下：
+`_read` function can also receive a `size` parameter to indicate how many bits of data the consumer wants to read, but this parameter is optional.
+
+It should be noted that you can use `util.inherit()` to inherit a Readable stream.
+
+To illustrate that the `_read` function is only called when the data consumer appears, we can simply modify the above code:
 
 	var Readable = require('stream').Readable;
 	var rs = Readable();
@@ -170,30 +175,30 @@ Readable流可以产出数据，你可以将这些数据传送到一个writable�
 	});
 	process.stdout.on('error', process.exit);
 	
-运行上面的代码我们可以发现如果我们只请求5比特的数据，那么`_read`只会运行5次：
+When running the above code, we can find that if we only request 5 bits of data, `_read` will only run 5 times:
 
 	$ node read2.js | head -c5
 	abcde
 	_read() called 5 times
 	
-在上面的代码中，`setTimeout`很重要，因为操作系统需要花费一些时间来发送程序结束信号。
+In the above code, `setTimeout` is very important because the operating system needs to spend some time sending the program end signal.
 
-另外,`process.stdout.on('error',fn)`处理器也很重要，因为当`head`不再关心我们的程序输出时，操作系统将会向我们的进程发送一个`SIGPIPE`信号，此时`process.stdout`将会捕获到一个`EPIPE`错误。
+In addition, the `process.stdout.on('error',fn)` handler is also important because when `head` is no longer interested in our program output, the operating system will send a `SIGPIPE` signal to our process, and `process.stdout` will capture an `EPIPE` error at this time.
 
-上面这些复杂的部分在和操作系统相关的交互中是必要的，但是如果你直接和node中的流交互的话，则可有可无。
+These complex parts are necessary in interactions with the operating system, but they are optional if you are interacting directly with streams in Node.
 
-如果你创建了一个readable流，并且想要将任何的值推送到其中的话，确保你在创建流的时候指定了objectMode参数,`Readable({ objectMode: true })`。  
+If you create a readable stream and want to push any value into it, make sure you specify the objectMode parameter when creating the stream, `Readable({ objectMode: true })`.
 
-#### 消耗一个readable流
+#### Consuming a Readable Stream
 
-大部分时候，将一个readable流直接pipe到另一种类型的流或者使用through或者concat-stream创建的流中，是一件很容易的事情。但是有时我们也会需要直接来消耗一个readable流。
+Most of the time, it is easy to pipe a readable stream directly into another type of stream or a stream created using through or concat-stream. But sometimes we also need to consume a readable stream directly.
 
 	process.stdin.on('readable', function () {
 	    var buf = process.stdin.read();
 	    console.dir(buf);
 	});
 	
-代码运行结果如下所示：
+The output of the code is as follows:
 
 	$ (echo abc; sleep 1; echo def; sleep 1; echo ghi) | node consume0.js 
 	<Buffer 61 62 63 0a>
@@ -201,45 +206,46 @@ Readable流可以产出数据，你可以将这些数据传送到一个writable�
 	<Buffer 67 68 69 0a>
 	null
 
-当数据可用时，`readable`事件将会被触发，此时你可以调用`.read()`方法来从缓存中获取这些数据。
+When data is available, the `readable` event will be triggered, and you can call the `.read()` method to get this data from the cache.
 
-当流结束时，`.read()`将返回`null`，因为此时已经没有更多的字节可以供我们获取了。
+When the stream ends, `.read()` will return `null` because there are no more bytes available for us to get.
 
-你也可以告诉`.read()`方法来返回`n`个字节的数据。虽然所有核心对象中的流都支持这种方式，但是对于对象流来说这种方法并不可用。
+You can also tell the `.read()` method to return `n` bytes of data. Although this method is available for all streams in the core objects, it is not available for object streams.
 
-下面是一个例子，在这里我们制定每次读取3个字节的数据：
+
+Here's an example where we specify that we want to read 3 bytes of data each time:
 
 	process.stdin.on('readable', function () {
 	    var buf = process.stdin.read(3);
 	    console.dir(buf);
 	});
-	
-运行上面的例子，我们将获取到不完整的数据:
+
+When we run the above code, we will get incomplete data:
 
 	$ (echo abc; sleep 1; echo def; sleep 1; echo ghi) | node consume1.js 
 	<Buffer 61 62 63>
 	<Buffer 0a 64 65>
 	<Buffer 66 0a 67>
-	
-这是因为多余的数据都留在了内部的缓存中，因此这个时候我们需要告诉node我们还对剩下的数据感兴趣，我们可以使用`.read(0)`来完成这件事：
+
+This is because the extra data is left in the internal buffer. Therefore, we need to tell Node that we are still interested in the remaining data. We can use `.read(0)` to accomplish this:
 
 	process.stdin.on('readable', function () {
 	    var buf = process.stdin.read(3);
 	    console.dir(buf);
 	    process.stdin.read(0);
 	});
-	
-到现在为止我们的代码和我们所期望的一样了！
+
+Now our code works as expected!
 
 	$ (echo abc; sleep 1; echo def; sleep 1; echo ghi) | node consume2.js 
 	<Buffer 61 62 63>
 	<Buffer 0a 64 65>
 	<Buffer 66 0a 67>
 	<Buffer 68 69 0a>
-	
-我们也可以使用`.unshift()`方法来放置多余的数据。
 
-使用`unshift()`方法能够放置我们进行不必要的缓存拷贝。在下面的代码中我们将创建一个分割新行的可读解析器:
+We can also use the `.unshift()` method to put back the extra data.
+
+Using the `unshift()` method can avoid unnecessary buffer copying. In the following code, we will create a readable parser that splits on newlines:
 
 	var offset = 0;
 
@@ -257,8 +263,8 @@ Readable流可以产出数据，你可以将这些数据传送到一个writable�
 	    }
 	    process.stdin.unshift(buf);
 	});
-	
-代码的运行结果如下所示：
+
+The output of the code is as follows:
 
 	$ tail -n +50000 /usr/share/dict/american-english | head -n10 | node lines.js 
 	'hearties'
@@ -271,18 +277,19 @@ Readable流可以产出数据，你可以将这些数据传送到一个writable�
 	'heartlands'
 	'heartless'
 	'heartlessly'
-	
-当然，已经有很多这样的模块比如split来帮助你完成这件事情，你完全不需要自己写一个。
 
-### writable流
+Of course, there are already many modules like `split` that can help you accomplish this, so you don't need to write one yourself.
 
-一个writable流指的是只能流进不能流出的流:
+
+### Writable Stream
+
+A writable stream is a stream that can only be written to, not read from:
 
 	src.pipe(writableStream)
-	
-#### 创建一个writable流  
 
-只需要定义一个`._write(chunk,enc,next)`函数，你就可以将一个readable流的数据释放到其中：
+#### Creating a Writable Stream
+
+You only need to define a `._write(chunk, enc, next)` function to release data from a readable stream:
 
 	var Writable = require('stream').Writable;
 	var ws = Writable();
@@ -292,31 +299,30 @@ Readable流可以产出数据，你可以将这些数据传送到一个writable�
 	};
 
 	process.stdin.pipe(ws);
-	
-代码运行结果如下所示：
+
+The output of the code is as follows:
 
 	$ (echo beep; sleep 1; echo boop) | node write0.js 
 	<Buffer 62 65 65 70 0a>
 	<Buffer 62 6f 6f 70 0a>
 
+The first parameter, `chunk`, represents the data written in.
 
-第一个参数，`chunk`代表写进来的数据。
+The second parameter, `enc`, represents the encoding string, but you can only write a string when `opts.decodeString` is `false`.
 
-第二个参数`enc`代表编码的字符串，但是只有在`opts.decodeString`为`false`的时候你才可以写一个字符串。
+The third parameter, `next(err)`, is a callback function. You can use this callback function to tell the data consumer that more data can be written. You can optionally pass an error object `error`, which will trigger an `emit` event on the stream entity.
 
-第三个参数，`next(err)`是一个回调函数，使用这个回调函数你可以告诉数据消耗者可以写更多的数据。你可以有选择性的传递一个错误对象`error`，这时会在流实体上触发一个`emit`事件。
+In the process of transferring data from a readable stream to a writable stream, the data will be automatically converted to a `Buffer` object, unless you specify the `decodeStrings` parameter as `false` when creating the writable stream, `Writable({decodeStrings: false})`.
 
-在从一个readable流向一个writable流传数据的过程中，数据会自动被转换为`Buffer`对象，除非你在创建writable流的时候制定了`decodeStrings`参数为`false`,`Writable({decodeStrings: false})`。
+If you need to pass an object, you need to specify the `objectMode` parameter as `true`, `Writable({ objectMode: true })`.
 
-如果你需要传递对象，需要指定`objectMode`参数为`true`，`Writable({ objectMode: true })`。
+#### Writing to a Writable Stream
 
-#### 向一个writable流中写东西  
-
-如果你需要向一个writable流中写东西，只需要调用`.write(data)`即可。
+If you need to write to a writable stream, just call `.write(data)`.
 
 	process.stdout.write('beep boop\n');
-	
-为了告诉一个writable流你已经写完毕了，只需要调用`.end()`方法。你也可以使用`.end(data)`在结束前再写一些数据。
+
+To tell a writable stream that you have finished writing, just call the `.end()` method. You can also use `.end(data)` to write some more data before ending.
 
 	var fs = require('fs');
 	var ws = fs.createWriteStream('message.txt');
@@ -326,26 +332,25 @@ Readable流可以产出数据，你可以将这些数据传送到一个writable�
 	setTimeout(function () {
 	    ws.end('boop\n');
 	}, 1000);
-	
-运行结果如下所示:
+
+The output of the code is as follows:
 
 	$ node writing1.js 
 	$ cat message.txt
 	beep boop
 
-如果你在创建writable流时指定了`highWaterMark`参数，那么当没有更多数据写入时，调用`.write()`方法将会返回false。
+If you specify the `highWaterMark` parameter when creating the writable stream, calling the `.write()` method will return false when there is no more data to write.
 
-如果你想要等待缓存情况，可以监听`drain`事件。  
-
-
-
-### duplex流 
+If you want to wait for the cache situation, you can listen for the `drain` event.
 
 
-Duplex流是一个可读也可写的流，全双工。 如图：
+
+### Duplex Stream
+
+A duplex stream is a stream that can be both read from and written to, full duplex. As shown in the figure:
 ![](http://3.bp.blogspot.com/-hWPHqV9RJlM/VnrEyChmtnI/AAAAAAAABpQ/uTnbBCU87ek/s1600/duplex.PNG)
 
-代码实现上：
+In terms of code implementation:
 ```js
 const Readable = require('_stream_readable');
 const Writable = require('_stream_writable');
@@ -359,21 +364,22 @@ for (var v = 0; v < keys.length; v++) {
     Duplex.prototype[method] = Writable.prototype[method];
 }
 ```
-`Duplex` 首先继承了 `Readable`, 因为 javascript 没有 C++的多重继承的特性，所以
-遍历 `Writable`的原型方法然后赋值到 `Duplex`的原型上。
+`Duplex` first inherits `Readable`, because javascript does not have the multiple inheritance feature of C++, so
+traverse the prototype methods of `Writable` and assign them to the prototype of `Duplex`.
 
-### transform流  
-转换流（Transform streams）是一种输出由输入计算所得的双工流。它同时实现了 Readable 和 Writable 接口。
+### Transform Stream
+Transform streams are duplex streams that transform input into output. They implement both the Readable and Writable interfaces.
 
-Node中的转换流有：
+The transform stream can be imagined as the middle part of a stream, which can be read and written, but does not store data. It is only responsible for processing the data that passes through it.
+
+Node's transform streams include:
 * zlib streams
 * crypto streams
 
-你可以将transform流想象成一个流的中间部分，它可以读也可写，但是并不保存数据，它只负责处理流经它的数据。  
+### Summary
+The advantage of stream processing: dividing functions and combining them through pipelines.
 
-### 总结
-流式处理的优势: 将功能切分，并通过管道组合。
-
-
-### 参考
+### Reference
 https://github.com/substack/stream-handbook
+
+

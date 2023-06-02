@@ -62,9 +62,9 @@ By tracing the development issues of the node community, we can explore the chan
 This book is copyrighted by the author. 
 Unauthorized reproduction in any form is prohibited.
 
-- Contact the author @江凌 Weibo: http://weibo.com/yangjianghua
+- Contact the author Weibo: http://weibo.com/yangjianghua
 
-- Email: yjhjstz#gmail.com, Blog: http://alinode.aliyun.com
+- Email: yjhjstz#gmail.com
 
 This book is still being written. Welcome readers to discuss https://github.com/yjhjstz/deep-into-node/issues
 
