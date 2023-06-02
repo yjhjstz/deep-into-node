@@ -1,28 +1,29 @@
-## libuv 选型
 
-### linux native aio
+## libuv Selection
 
-Linux native aio 有两种API，一种是libaio提供的API，一种是利用系统调用封装成的API,后者使用的较多，因为不需要额外的库且简单。
+### Linux Native AIO
 
-- io_setup : 是用来设置一个异步请求的上下文，第一个参数是请求事件的个数，第二个参数唯一标识一个异步请求。
-- io_commit: 是用来提交一个异步io请求的，在提交之前，需要设置一下结构体`iocb`。
-- io_getevents: 用来获取完成的io事件，参数`min_nr`是事件个数的的最小值，`nr`是事件个数的最大值，如果没有足够的事件发生，该函数会阻塞。
-- io_destroy：在所有时间处理完之后，调用此函数销毁异步io请求。
+Linux Native AIO has two APIs, one is provided by libaio, and the other is a system call encapsulated API, which is used more because it does not require additional libraries and is simple.
 
-#### 限制
-aio只能使用于常规的文件IO，不能使用于socket，管道等IO，但对于 libuv 的 fs 模块使用需求已经足够了。
+- io_setup: is used to set up the context of an asynchronous request. The first parameter is the number of request events, and the second parameter uniquely identifies an asynchronous request.
+- io_commit: is used to submit an asynchronous IO request. Before submitting, you need to set the structure `iocb`.
+- io_getevents: is used to obtain completed IO events. The parameter `min_nr` is the minimum number of events, and `nr` is the maximum number of events. If there are not enough events, the function will block.
+- io_destroy: After all events are processed, call this function to destroy the asynchronous IO request.
 
-io_getevents在调用之后会阻塞直到有足够的事件发生，因此要实现真正的异步IO，需要借助eventfd和epoll达到目的。
+#### Limitations
+AIO can only be used for regular file IO and cannot be used for socket, pipe, and other IO. However, the demand for the libuv fs module has been sufficient.
 
-#### libuv native aio 实现
-笔者实现过一个基于 libuv 的 native aio，https://github.com/yjhjstz/libuv/commit/2748728635c4f74d6f27524fd36e680a88e4f04a
+After io_getevents is called, it will block until enough events occur. Therefore, to achieve true asynchronous IO, you need to use eventfd and epoll to achieve the goal.
 
-从理论上看，在libuv中实现AIO, 
-* 其一：比原来的libuv实现少了一次write系统调用，无需在用户态实现线程池和工作队列．
-* 其二：native aio实现可以实现批量回调。
+#### libuv Native AIO Implementation
+A native aio based on libuv has been implemented, https://github.com/yjhjstz/libuv/commit/2748728635c4f74d6f27524fd36e680a88e4f04a
 
-我们看下性能对比数据, 测试脚本是简单的文件读取：
-* Threadpool 模型
+In theory, implementing AIO in libuv:
+* First: it reduces one write system call compared to the original libuv implementation, and there is no need to implement a thread pool and work queue in user space.
+* Second: native aio implementation can achieve batch callbacks.
+
+Let's take a look at the performance comparison data. The test script is a simple file read:
+* Threadpool model
 ```shell
 jiangling@young:~/workspace/libuv$ wrk -t4 -c100 -d30s http://127.0.0.1:30003/
 Running 30s test @ http://127.0.0.1:30003/
@@ -35,7 +36,7 @@ Requests/sec: 5963.45
 Transfer/sec: 3.47MB
 ```
 
-* Native AIO 模型
+* Native AIO model
 ```shell
 jiangling@young:~/workspace/libuv$ wrk -t4 -c100 -d30s http://127.0.0.1:30003/
 Running 30s test @ http://127.0.0.1:30003/
@@ -48,54 +49,45 @@ Requests/sec: 6169.28
 Transfer/sec: 3.59MB
 ```
 
-** Max Latency减小16%，tps提升3%。**
+**Max Latency decreased by 16%, and TPS increased by 3%.**
 
-
-### Threadpool 模型
-我们先看下一次 node.js read 的调用示意图：
+### Threadpool Model
+Let's first look at the schematic diagram of a node.js read call:
 ![](node-aio.png)
 
-代码的运行经历了以下步骤： 
-- 1 node, libuv 初始化；
+The code goes through the following steps:
+- 1 node, libuv initialization;
+- 2 The Read method in node_file.cc calls `uv_fs_read` of libuv (fs.c) to encapsulate the request;
+- 3 libuv encapsulates the request into uv_work and submits it to the end of the task queue, triggering the signal;
+- 4 At this time, the read call of the main thread returns.
+- 5 The thread pool takes out a request from the uv_work queue and starts executing read IO;
+- 6 Send a signal to the main thread to indicate that the task is completed, and wait for other operations after executing the read call.
+- 7 The main thread epoll takes out completed requests from the response queue;
+- 8 The main thread responds to epoll events;
+- 9 The main thread executes the callback function of the request.
 
-- 2 node_file.cc中的Read方法调用libuv（fs.c）的 `uv_fs_read` ， 封装请求； 
+The asynchronous IO of node.js is clear, and we can clearly see that such a Threadpool model is applicable to all platforms.
 
-- 3 libuv 将请求封装成 uv_work, 提交到任务队列尾部，触发信号；
+> Linux AIO
+> AIO first appeared in the 2.5 version of the kernel and is now a standard feature of the product kernel of version 2.6.
 
-- 4 此时主线程的read调用返回。 
-
-- 5 线程池从uv_work队列中取出一个请求，开始执行read IO；
-
-- 6 向主线程发送信号表明任务完成，等待执行read调用后的其它操作。 
-
-- 7 主线程 epoll，从响应队列取已经完成的请求;
-
-- 8 主线程响应 epoll事件；
-
-- 9 主线程执行请求的callback函数。 
-
-
-node.js 异步 IO 的脉络已经清晰，我们清楚的看到这样的一个 Threadpool 模型是全平台适用的。
-
-> Linux 上的 AIO
-> AIO 在 2.5 版本的内核中首次出现，现在已经是 2.6 版本的产品内核的一个标准特性了。
-
-并且由于 Native AIO 是在 linux 2.6之后引入，并且并不稳定。 社区也有过激烈的讨论：
+And because Native AIO was introduced after linux 2.6 and is not stable. The community has also had intense discussions:
 
 - https://github.com/libuv/libuv/issues/28
 - https://github.com/libuv/libuv/issues/461
 
+After weighing the pros and cons, I also strongly support the model adopted by the community, giving users more choices and reliability.
 
-权衡再三，笔者也非常支持社区采用的模型，赋予用户更多的选择性和可靠性。
+### Summary
+The user-space thread pool implementation gives users greater flexibility and selectivity. For example:
 
-### 总结
-用户态的线程池实现给了用户更大的灵活性和选择性。比如：
+* 1. The number of thread pools, the default is 4, and users can specify it by setting the environment variable `UV_THREADPOOL_SIZE`.
+* 2. Reuse thread pools with time-consuming GETADDRINFO.
 
-* 1.线程池的个数，默认是4个，用户可以通过设置环境变量 `UV_THREADPOOL_SIZE`指定。
-* 2.和耗时的 GETADDRINFO 复用线程池。
+It should be pointed out that there is still room for improvement in the thread pool model:
+* Optimization of the global lock `static uv_mutex_t mutex;`
+* Support task priority.
 
-需要指出的是，线程池模型还有改进的空间：
-* `static uv_mutex_t mutex;`全局锁的优化；
-* 支持任务优先级。
+### Reference
 
-### 参考
+

@@ -1,21 +1,20 @@
-## 文件io
 
-上一章节在讲述了线程池的模型，读者对一次异步 IO 发起到结束有了一个大致的认识。
+## File IO
 
-fs 模块还提供了同步接口，如 `readFileSync`， 这在异步模型的 node.js 的
-核心模块中是极为少见的。
+The previous chapter discussed the thread pool model, which gave readers a rough understanding of the process of asynchronous IO from initiation to completion.
 
+The fs module also provides synchronous interfaces, such as `readFileSync`, which is rare in the core modules of node.js's asynchronous model.
 
-### 请求对象
+### Request Object
 
-* 异步读文件接口定义： 
+* Asynchronous file reading interface definition: 
 `fs.readFile = function(path, options, callback_) `
-* 同步读文件接口定义：
+* Synchronous file reading interface definition:
 `fs.readFileSync = function(path, options) `
 
-两者明显的差异在于第三个参数 `callback_`, 异步会提交请求然后等待回调，同步则阻塞直到返回。
+The obvious difference between the two is the third parameter `callback_`. Asynchronous requests submit the request and wait for the callback, while synchronous requests block until they return.
 
-让我们来看看第三个参数对实现的影响。
+Let's take a look at the impact of the third parameter on the implementation.
 
 ```js
   // fs.js
@@ -26,11 +25,10 @@ fs 模块还提供了同步接口，如 `readFileSync`， 这在异步模型的 
   req.oncomplete = readFileAfterOpen;
 ```
 
-异步的实现中会创建一个请求对象，并且绑定回调和上下文环境。 该请求对象由 C++ 绑定导出。
-
+In the implementation of asynchronous requests, a request object is created and the callback and context environment are bound to it. This request object is exported by C++ bindings.
 
 #### FSReqWrap (node.js)
-FSReqWrap 是由 `src/node_file.cc` 实现并导出，提供给 javascript 使用。
+FSReqWrap is implemented and exported by `src/node_file.cc` for use by JavaScript.
 
 ```c++
 class FSReqWrap: public ReqWrap<uv_fs_t> {
@@ -49,18 +47,16 @@ class FSReqWrap: public ReqWrap<uv_fs_t> {
 };
 
 ```
-FSReqWrap 继承 ReqWrap<uv_fs_t>, ReqWrap 是个模板类，`T req_;` 存储了不同类型的请求，在这里
-模板编译后，`uv_fs_t req_;`, req_ 存储了 uv_fs_t 请求对象。 这源自于一次性能优化的提交。
+FSReqWrap inherits from ReqWrap<uv_fs_t>, ReqWrap is a template class, `T req_;` stores requests of different types, and after template compilation, `uv_fs_t req_;` stores the uv_fs_t request object. This comes from a performance optimization submission.
 > fs: improve `readFile` performance
     
 > This commit improves `readFile` performance by
 > reducing number of closure allocations and using
 > `FSReqWrap` directly.
 
-具体了解, https://github.com/iojs/io.js/pull/718 。
+For more information, see https://github.com/iojs/io.js/pull/718.
 
-
-在js 层发起请求后，会来到C++绑定层，
+After the request is initiated in JavaScript, it will come to the C++ binding layer,
 ```c++
 #define ASYNC_DEST_CALL(func, req, dest, ...)                                 \
   Environment* env = Environment::GetCurrent(args);                           \
@@ -85,10 +81,10 @@ FSReqWrap 继承 ReqWrap<uv_fs_t>, ReqWrap 是个模板类，`T req_;` 存储了
   ASYNC_DEST_CALL(func, req, nullptr, __VA_ARGS__)                            \
 ```
 
-这里才会生成 libuv 所需的请求对象， 对于读请求调用 `uv_fs_read`, 提交请求，指定回调函数为 `After`。
+Here, the libuv request object required is generated, and for read requests, `uv_fs_read` is called to submit the request and specify the callback function as `After`.
 
 #### uv_fs_t (libuv)
-看一下libuv的异步读文件代码，deps/uv/src/unix/fs.c：
+Let's take a look at the asynchronous file reading code in libuv, deps/uv/src/unix/fs.c:
 
 ```c++
 /* uv_fs_t is a subclass of uv_req_t. */
@@ -122,20 +118,12 @@ struct uv_fs_s {
   while (0)
 ```
 
-可以看到一次异步文件读操作在libuv层被封装到一个uv_fs_t的结构体，req->cb是来自上层的回调函数（node C++层：src/node_file.cc 的After函数）。
+It can be seen that an asynchronous file reading operation is encapsulated in a uv_fs_t structure in the libuv layer, and req->cb is the callback function from the upper layer (the After function in node C++ layer: src/node_file.cc).
 
-异步io请求最后调用uv__work_submit，把异步io请求提交给线程池。这里有两个函数：
+The main body of the io operation `uv__fs_work` is executed in the thread pool at this time. However, `uv__fs_done` must be called back in the thread of the event loop, because this function will eventually call back to the user's js code callback function, and all the code in the js code must be in the same thread.
 
-* `uv__fs_work`：这个是文件io的处理函数，可以看到当cb为NULL的时候，即非异步模式，`uv__fs_work`在当前线程（事件循环所在线程）直接被调用。如果cb != NULL，即文件io为异步模式，此时把`uv__fs_work`和`uv__fs_done`提交给线程池。
-
-* `uv__fs_done`：这个是异步文件io结束后的回调函数。在uv__fs_done里面会回调上层C++模块的cb函数（即req->cb）。
-
-需要特别注意的是：** 此时io操作的主体 `uv__fs_work`函数是在线程池里执行的。
-但是`uv__fs_done`
-必须在事件循环的线程里被回调，因为这个函数最终会回调到用户js代码的回调函数，而js代码里的所有代码必须在同个线程里面。**
-
-#### 线程池的请求对象 —— struct uv__work
-先看下 `uv__work`的定义：
+#### Thread Pool Request Object —— struct uv__work
+First, let's look at the definition of `uv__work`:
 ```c++
 struct uv__work {
   void (*work)(struct uv__work *w);
@@ -144,7 +132,8 @@ struct uv__work {
   void* wq[2];
 };
 ```
-再看看`uv__work_submit`做了什么：
+
+Let's take a look at what `uv__work_submit` does:
 ```c++
 static void post(QUEUE* q) {
   uv_mutex_lock(&mutex);
@@ -166,27 +155,26 @@ void uv__work_submit(uv_loop_t* loop,
 }
 ```
 
-`uv__work_submit` 把传进来的`uv__fs_work`、`uv__fs_done`封装到`uv__work`结构体里面，这个结构体表示一个线程操作的请求。通过post把请求提交给线程池。
+`uv__work_submit` encapsulates `uv__fs_work` and `uv__fs_done` into a `uv__work` structure, which represents a request for a thread operation. The request is submitted to the thread pool through `post`.
 
-看到post函数里面的QUEUE_INSERT_TAIL，把该`uv__work`对象加进`wq`链表里面。wq是一个全局静态变量。也就是说，进程空间里的所有线程共用同一个wq链表。
+In the `post` function, `QUEUE_INSERT_TAIL` adds the `uv__work` object to the `wq` linked list. `wq` is a global static variable. That is to say, all threads in the process space share the same `wq` linked list.
+
+When `post` sends a signal to the corresponding condition variable `cond` through `uv_cond_signal`, a thread that is suspended and waiting in `uv_cond_wait` is activated.
+
+The worker thread continues to execute, takes out `w` from `wq`, and executes `w->work()`.
+
+After the worker thread completes the task, it calls `uv_async_send` to notify the main thread's unified IO observer to execute the callback.
+
+### Callback
+
+### Summary
+Through the sorting of request objects at each layer, the context of a read request is also detailed, giving readers a rational understanding.
+
+### Reference
 
 
-看到post函数通过uv_cond_signal向相应的条件变量——cond发送信号，处在uv_cond_wait挂起等待的工作线程当中的某个线程被激活。
-
-worker线程往下执行，从wq取出w，执行w->work()。
-
-工作线程完成任务后，调用uv_async_send通知主线程统一的io观察者，执行 callback。
 
 
-### 回调
-
-
-
-
-### 总结
-通过对各层请求对象的梳理，也详细梳理出了一次 read 请求的脉络, 使读者有了一个理性的认识。
-
-### 参考
 
 
 

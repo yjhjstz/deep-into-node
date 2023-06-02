@@ -1,7 +1,8 @@
+
 ## FAQ 
 
 
-### 同步 require()
+### Synchronous require()
 
 ```js
 // Native extension for .js
@@ -10,23 +11,23 @@ Module._extensions['.js'] = function(module, filename) {
   module._compile(internalModule.stripBOM(content), filename);
 };
 ```
-大家可能都有疑问：为什么会选择使用同步而不用异步实现呢？
+Many people may wonder why synchronous is used instead of asynchronous implementation?
 
-之所以同步是 Node.js 所遵循的 CommonJS 的模块规范要求的, 具体来说
+The reason why synchronous is used is because it is required by the CommonJS module specification followed by Node.js. Specifically,
 
-在当年，CommonJS 社区对此就有很多争议，导致了坚持异步的 AMD 从 CommonJS 中分裂出来。
+At that time, the CommonJS community had a lot of controversy over this, which led to the split of AMD, which insisted on asynchronous, from CommonJS.
 
-CommonJS 模块是同步加载和同步执行，AMD 模块是异步加载和异步执行，CMD（Sea.js）模块是异步加载和同步执行。ES6 的模块体系最后选择的是异步加载和同步执行。也就是 Sea.js 的行为是最接近 ES6 模块的。不过 Sea.js 这样做是需要付出代价的——需要扫描代码提取依赖，所以它不像 CommonJS/AMD 是纯运行时的模块系统。
+CommonJS modules are loaded and executed synchronously, AMD modules are loaded and executed asynchronously, and CMD (Sea.js) modules are loaded asynchronously and executed synchronously. The module system of ES6 finally chose asynchronous loading and synchronous execution. That is, Sea.js's behavior is closest to ES6 modules. However, Sea.js does this at a cost-it needs to scan the code to extract dependencies, so it is not a purely runtime module system like CommonJS/AMD.
 
-注意 Sea.js 是 2010年之后开发的，提出 CMD 更晚。Node.js 当年（2009年）只有 CommonJS 和 AMD 两个选择。就算当时已经有 CMD 的等价提案，从性能角度出发，Node.js 不太可能选择需要静态分析开销的 类 CMD 方案。考虑到 Node.js 的模块是来自于本地文件系统，最后 Node.js 选择了看上去更简单的 CommonJS 模块规范，直到今天。
+Note that Sea.js was developed after 2010, and CMD was proposed later. At that time, Node.js had only two choices: CommonJS and AMD. Even if there were equivalent proposals for CMD at that time, from the perspective of performance, Node.js was unlikely to choose a class CMD scheme that requires static analysis overhead. Considering that Node.js modules come from the local file system, Node.js finally chose the seemingly simpler CommonJS module specification, until today.
 
 
-* 从模块规范的角度来看，依赖的同步获取是几乎所有模块机制的首选，是符合由无数的语言奠定的开发者的直觉。
+* From the perspective of module specifications, synchronous acquisition of dependencies is the first choice for almost all module mechanisms, and it is in line with the intuition of developers laid by countless languages.
 
-* 从模块本身的特性来说的，结论就是使用异步的require收益很小，同时对开发者并不友好。
+* From the perspective of the characteristics of the module itself, the conclusion is that the benefits of using asynchronous require are small, and it is not friendly to developers at the same time.
 
-### fs.realpath 缓存
-如今的 `realpath`的实现变得非常简洁, 直接调用系统调用realpath。
+### fs.realpath cache
+Nowadays, the implementation of `realpath` has become very concise, directly calling the system call realpath.
 ```js
 fs.realpath = function realpath(path, options, callback) {
   if (!options) {
@@ -49,55 +50,43 @@ fs.realpath = function realpath(path, options, callback) {
 };
 ```
 
-大家可能又有疑问了， 原本提升性能的路径缓存去哪里了，不是说缓存都是提升性能的重要手段吗？
+You may have another question, where did the path cache that improves performance go? Isn't caching an important means of improving performance?
 
-社区的修改可以在 https://github.com/nodejs/node/pull/3594 看到，
+The community's modifications can be seen at https://github.com/nodejs/node/pull/3594,
 >   fs: optimize realpath using uv_fs_realpath()
     
 >   Remove realpath() and realpathSync() cache.
 >   Use the native uv_fs_realpath() which is faster
 >   then the JS implementation by a few orders of magnitude
 
-去掉了缓存反而提升了性能， 作者的 commit 提交也写的非常清楚：native uv_fs_realpath 实现要大大优于js层的实现，
-但并没有说具体原因。
+Removing the cache actually improves performance. The author's commit submission is also very clear: the native uv_fs_realpath implementation is much better than the js layer implementation, but the specific reason is not mentioned.
 
 
-前面我已经提到过了文件系统的基本原理和大致实现，VFS中引入了高速磁盘缓存的机制，这属于一种软件机制，允许内核将原本存在磁盘上的某些信息保存在RAM中，以便对这些数据的进一步访问能快速进行，而不必慢速访问磁盘本身。
-高速磁盘缓存可大致分为以下三种：
-* 目录项高速缓存——主要存放的是描述文件系统路径名的目录项对象
-* 索引节点高速缓存——主要存放的是描述磁盘索引节点的索引节点对象
-* 页高速缓存——主要存放的是完整的数据页对象，每个页所包含的数据一定属于某个文件，同时，所有的文件读写操作都依赖于页高速缓存。其是Linux内核所使用的主要磁盘高速缓存。
+I have mentioned the basic principles and rough implementation of the file system before. The VFS introduces a mechanism of high-speed disk cache, which belongs to a software mechanism that allows the kernel to save some information that originally exists on the disk in RAM, so that further access to these data can be quickly performed without having to slow down. Access to the disk itself.
+High-speed disk cache can be roughly divided into the following three types:
+* Directory item high-speed cache-mainly stores directory item objects that describe file system path names
+* Index node high-speed cache-mainly stores index node objects that describe disk index nodes
+* Page high-speed cache-mainly stores complete data page objects. Each page contains data that belongs to a certain file. At the same time, all file read and write operations depend on the page high-speed cache. It is the main disk high-speed cache used by the Linux kernel.
 
-`readpath` 的 native 实现的高性能得益于目录项高速缓存，有自身的淘汰机制，保持自身的高效的访问。其实缓存机制依然存在，只是下移到 VFS文件系统层面了。
+The high performance of the native implementation of `readpath` is due to the directory item high-speed cache, which has its own elimination mechanism and maintains efficient access to itself. In fact, the caching mechanism still exists, but it has been moved down to the VFS file system level.
 
 
-### 流式读
-nodejs的fs模块并没有提供一个copy的方法，但我们可以很容易的实现一个，比如：
+### Stream reading
+The fs module of nodejs does not provide a copy method, but we can easily implement one, for example:
 ```js
 var source = fs.readFileSync('/path/to/source', {encoding: 'utf8'});
 fs.writeFileSync('/path/to/dest', source);
 ```
-这种方式是把文件内容全部读入内存，然后再写入文件，对于小型的文本文件，这没有多大问题。但是对于体积较大的二进制文件，比如音频、视频文件，动辄几个GB大小，如果使用这种方法，很容易使内存“爆仓”。具体的说，对于32位系统是1GB，64位是2GB。
+This method reads the entire file content into memory and then writes it to the file. For small text files, this is not a big problem. But for large binary files, such as audio and video files, which are often several GB in size, if this method is used, it is easy to make the memory "out of stock". Specifically, it is 1GB for 32-bit systems and 2GB for 64-bit systems.
 
-理想的方法应该是读一部分，写一部分，不管文件有多大，只要时间允许，总会处理完成，这里就需要用到流的概念。
+The ideal method should read a part and write a part. No matter how large the file is, as long as time permits, it will be processed. Here we need to use the concept of stream.
 
-上面的文件复制可以简单实现一下：
+The above file copy can be easily implemented as follows:
 ```js
-// pipe自动调用了data,end等事件
+// The pipe automatically calls data, end and other events
 fs.createReadStream('/path/to/source').pipe(fs.createWriteStream('/path/to/dest'));
 ```
-源文件通过管道自动流向了目标文件。
+The source file automatically flows to the target file through the pipeline.
 
-
-### 总结
-- 不要迷信异步， 使用时评估同步和异步的开销，包括复杂度和性能。
-
-- 缓存策略需要综合考虑，这离不开对系统的了解(更多的涉猎)，重复缓存只会带来没必要的开销。
-
-- 大文件的操作，使用流式操作。
-
-
-### 参考
-* https://www.zhihu.com/question/38041375
 
 
