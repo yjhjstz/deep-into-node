@@ -1,31 +1,27 @@
-
 ## cluster
 
 
-### 背景
-众所周知，Node.js是单线程的，一个单独的Node.js进程无法充分利用多核。Node.js从v0.8开始，新增cluster模块，让Node.js开发Web服务时，很方便的做到充分利用多核机器。
- 
-充分利用多核的思路是：使用多个进程处理业务。cluster模块封装了创建子进程、进程间通信、服务负载均衡。有两类进程，master进程和worker进程，master进程是主控进程，它负责启动worker进程，worker是子进程、干活的进程。
+### Background
+As we all know, Node.js is single-threaded, and a single Node.js process cannot fully utilize multiple cores. Since v0.8, Node.js has added the cluster module, which makes it easy to fully utilize multi-core machines when developing web services with Node.js.
 
-### 竞争模型 
+The idea of fully utilizing multiple cores is to use multiple processes to handle business. The cluster module encapsulates the creation of child processes, inter-process communication, and service load balancing. There are two types of processes, the master process and the worker process. The master process is the main control process, responsible for starting the worker process, and the worker is the child process and the working process.
 
-最初的 Node.js 多进程模型就是这样实现的，master 进程创建 socket，绑定到某个地址以及端口后，自身不调用 listen 来监听连接以及 accept 连接，而是将该 socket 的 fd 传递到 fork 出来的 worker 进程，worker 接收到 fd 后再调用 listen，accept 新的连接。但实际一个新到来的连接最终只能被某一个 worker 进程 accpet 再做处理，至于是哪个 worker 能够 accept 到，开发者完全无法预知以及干预。这势必就导致了当一个新连接到来时，多个 worker 进程会产生竞争，最终由胜出的 worker 获取连接。
+### Competition Model
 
-相信到这里大家也应该知道这种多进程模型比较明显的问题了
+The initial Node.js multi-process model was implemented in this way. The master process creates a socket, binds it to a certain address and port, and does not call listen to listen for connections and accept connections, but passes the fd of the socket to the worker process forked out. The worker receives the fd and then calls listen to accept new connections. However, in reality, a new connection can only be accepted and processed by a certain worker process, and which worker can accept it cannot be predicted or intervened by the developer. This inevitably leads to competition between multiple worker processes when a new connection arrives, and the winner will get the connection.
 
-* 多个进程之间会竞争 accpet 一个连接，产生惊群现象，效率比较低。
-* 由于无法控制一个新的连接由哪个进程来处理，必然导致各 worker 进程之间的负载非常不均衡。
+I believe that everyone should know the obvious problems with this multi-process model
 
+* Multiple processes compete to accept a connection, resulting in a low efficiency.
+* Since it is impossible to control which process handles a new connection, the load between worker processes is very unbalanced.
 
+### Round-robin
 
-### round-robin (轮询)
+The above multi-process model has many problems, so another model based on round-robin appeared. The main idea is that the master process creates a socket, binds the address and port, and then listens. The fd of the socket is not passed to each worker process. When the master process receives a new connection, it decides which worker to pass the accepted client socket fd to. I used the specified method here, so how to pass and which worker to pass to is completely controllable. Round-robin is just one of the algorithms, of course, it can be replaced with others.
 
-上面的多进程模型存在诸多问题，于是就出现了基于round-robin的另一种模型。
-主要思路是master进程创建socket，绑定好地址以及端口后再进行监听。该socket的fd不传递到各个worker进程，当master进程获取到新的连接时，再决定将accept到的客户端socket fd传递给指定的worker处理。我这里使用了指定, 所以如何传递以及传递给哪个worker完全是可控的，round-robin只是其中的某种算法而已，当然可以换成其他的。
+How does the master pass the received request to the worker for processing and then respond?
 
-Master是如何将接收的请求传递至worker中进行处理然后响应的？
-
-Cluster 模块通过监听该内部TCP服务器的connection事件，在监听器函数里，有负载均衡地挑选出一个worker，向其发送newconn内部消息（消息体对象中包含cmd: 'NODE_CLUSTER'属性）以及一个客户端句柄（即connection事件处理函数的第二个参数），相关代码如下：
+The Cluster module listens to the connection event of the internal TCP server. In the listener function, it selects a worker with load balancing and sends a newconn internal message (the message body object contains the cmd: 'NODE_CLUSTER' attribute) and a client handle (that is, the second parameter of the connection event processing function) to it. The relevant code is as follows:
 ```js
 // lib/cluster.js
 // ...
@@ -57,12 +53,12 @@ RoundRobinHandle.prototype.handoff = function(worker) {
   });
 };
 ```
-Worker进程在接收到了newconn内部消息后，根据传递过来的句柄，调用实际的业务逻辑处理并返回：
+After the worker process receives the newconn internal message, it creates a net.Socket instance based on the passed handle, executes the specific business logic, and returns:
 ```js
 // lib/cluster.js
 // ...
 
-// 该方法会在Node.js初始化时由 src/node.js 调用
+// This method will be called by src/node.js when Node.js is initialized
 cluster._setupWorker = function() {
   // ...
   process.on('internalMessage', internal(worker, onmessage));
@@ -82,14 +78,14 @@ function onconnection(message, handle) {
   if (accepted) server.onconnection(0, handle);
 }
 ```
-至此，也总结一下：
+So far, let's summarize:
 
-* 所有请求先统一经过内部TCP服务器。
-* 在内部TCP服务器的请求处理逻辑中，有负载均衡地挑选出一个worker进程，向其发送一个newconn内部消息，随消息发送客户端句柄。
-* Worker进程接收到此内部消息，根据客户端句柄创建net.Socket实例，执行具体业务逻辑，返回。
+* All requests first go through the internal TCP server.
+* In the request processing logic of the internal TCP server, a worker process is selected with load balancing, and a newconn internal message is sent to it, along with the client handle.
+* The worker process receives this internal message, creates a net.Socket instance based on the client handle, executes the specific business logic, and returns.
 
-### listen 端口复用
-为了得到这个问题的解答，我们先从worker进程的初始化看起，master进程在fork工作进程时，会为其附上环境变量NODE_UNIQUE_ID，是一个从零开始的递增数：
+### Listen Port Reuse
+To get the answer to this problem, let's start with the initialization of the worker process. When the master process forks a working process, it attaches the environment variable NODE_UNIQUE_ID to it, which is an incrementing number starting from zero:
 
 ```js
 // lib/cluster.js
@@ -109,9 +105,9 @@ function createWorkerProcess(id, env) {
   });
 }
 ```
-随后Node.js在初始化时，会根据该环境变量，来判断该进程是否为cluster模块fork出的工作进程，若是，则执行workerInit()函数来初始化环境，否则执行masterInit()函数。
+Then, when Node.js is initialized, it judges whether the process is a working process forked by the cluster module based on this environment variable. If so, it executes the workerInit() function to initialize the environment, otherwise it executes the masterInit() function.
 
-在workerInit()函数中，定义了cluster._getServer方法，这个方法在任何net.Server实例的listen方法中，会被调用：
+In the workerInit() function, the cluster._getServer method is defined. This method will be called in the listen method of any net.Server instance:
 
 ```js
 // lib/net.js
@@ -143,11 +139,13 @@ function listen(self, address, port, addressType, backlog, fd, exclusive) {
   }
 }
 ```
-你可能已经猜到，答案就在这个cluster._getServer函数的代码中。它主要干了两件事：
-* 向master进程注册该worker，若master进程是第一次接收到监听此端口/描述符下的worker，则起一个内部TCP服务器，来承担监听该端口/描述符的职责，随后在master中记录下该worker。
-* Hack掉worker进程中的net.Server实例的listen方法里监听端口/描述符的部分，使其不再承担该职责。
 
-对于第一件事，由于master在接收，传递请求给worker时，会符合一定的负载均衡规则（在非Windows平台下默认为轮询），这些逻辑被封装在RoundRobinHandle类中。故，初始化内部TCP服务器等操作也在此处：
+You may have guessed that the answer is in the code of the cluster._getServer function. It mainly does two things:
+* Register the worker with the master process. If the master process receives a worker listening on this port/descriptor for the first time, it starts an internal TCP server to handle the listening on this port/descriptor, and then records the worker in the master process.
+* Hack the part of the listen method of the net.Server instance in the worker process that listens on the port/descriptor, so that it no longer handles this responsibility.
+
+For the first thing, since the master process receives and passes requests to workers according to certain load balancing rules (default to round-robin on non-Windows platforms), these logics are encapsulated in the RoundRobinHandle class. Therefore, the initialization of the internal TCP server and other operations are also performed here:
+
 ```js
 // lib/cluster.js
 // ...
@@ -168,7 +166,7 @@ function RoundRobinHandle(key, address, port, addressType, backlog, fd) {
   /// ...
 }
 ```
-对于第二件事，由于net.Server实例的listen方法，最终会调用自身_handle属性下listen方法来完成监听动作，故在代码中修改之：
+For the second thing, since the listen method of the net.Server instance ultimately calls the listen method under its own _handle property to complete the listening action, it is modified in the code as follows:
 ```js
 // lib/cluster.js
 // ...
@@ -223,13 +221,10 @@ function listen(self, address, port, addressType, backlog, fd, exclusive) {
 }
 ```
 
-至此，总结下：
-* 端口仅由master进程中的内部TCP服务器监听了一次。
-* 不会出现端口被重复监听报错，是由于，worker进程中，最后执行监听端口操作的方法，已被cluster模块主动覆盖。
+Summary:
+* The port is only listened to once by the internal TCP server in the master process.
+* There will be no error of port being listened to repeatedly, because the method that ultimately performs the listen operation in the worker process has been actively overridden by the cluster module.
 
 
 
-### 总结
 
-
-### 参考

@@ -24,7 +24,7 @@ By tracing the development issues of the node community, we can explore the chan
   * [Why libuv](chapter1/chapter1-1.md)
   * [V8 Concepts](chapter2/chapter2-0.md)
   * [C++ and JS Interaction](chapter2/chapter2-1.md)
-* [Starting from "Hello World"] (chapter1/chapter1-2.md)
+* [Starting from Hello World](chapter1/chapter1-2.md)
 * [Module Loading](chapter2/chapter2-2.md)
 * [Global Object](chapter12/chapter12-1.md)
 * [Event Loop](chapter5/chapter5-1.md)
