@@ -1,11 +1,12 @@
-##  Yield 魔法
-ES6中的Generator的引入，极大程度上改变了JavaScript程序员对迭代器的看法，并为解决`callback hell`提供了新方法。
+
+## The Magic of Yield
+The introduction of Generators in ES6 has greatly changed the way JavaScript programmers view iterators and provided a new way to solve `callback hell`.
 
 ### Generators
-迭代器模式是很常用的设计模式，但是实现起来，很多东西是程序化的；当迭代规则比较复杂时，维护迭代器内的状态，是比较麻烦的。 于是有了generator，何为generator？
-> Generators: a better way to build Iterators. 
+The iterator pattern is a commonly used design pattern, but when the iteration rules are complex, maintaining the state within the iterator can be cumbersome. This is where generators come in. What are generators?
+> Generators: a better way to build Iterators.
 
-借助 yield 关键字,可以更优雅的实现fibonacci数列。
+With the help of the `yield` keyword, we can implement the Fibonacci sequence more elegantly.
 
 ```js
 function* fibonacci() {
@@ -18,21 +19,17 @@ function* fibonacci() {
 }
 ```
 
+### Yield and Asynchronous Operations
+`yield` can pause the execution flow, which provides the possibility of changing the execution flow. This is similar to Python's coroutine.
 
+The reason why generators can be used to control code flow is that they use `yield` to switch the execution paths of two or more generators. This switching is at the statement level, not the function call level. Its essence is CPS transformation.
 
-### yield与异步
-yield可以暂停运行流程，那么便为改变执行流程提供了可能。这和Python的coroutine类似。
+After `yield`, the current call actually ends, and the control has actually been transferred to the function that called the `next` method of the generator externally, accompanied by a change in state. So if the external function does not continue to call the `next` method, the function where `yield` is located is equivalent to stopping at `yield`. So to complete the asynchronous operation and continue the function execution, just call the `next` method of the generator at the appropriate place, just like the function is executing after pausing.
 
-Generator之所以可用来控制代码流程，就是通过yield来将两个或者多个Generator的执行路径互相切换。这种切换是语句级别的，而不是函数调用级别的。其本质是CPS变换。
+### V8 Implementation
 
-yield之后，实际上本次调用就结束了，控制权实际上已经转到了外部调用了generator的next方法的函数，调用的过程中伴随着状态的改变。那么如果外部函数不继续调用next方法，那么yield所在函数就相当于停在yield那里了。所以把异步的东西做完，要函数继续执行，只要在合适的地方再次调用generator 的next就行，就好像函数在暂停后，继续执行。
-
-
-
-### V8 实现
-
-####  parse phase 
-Generator function 和  `yield` 关键字处理是在 `parser.cc`, 我们看到 AST 解析函数： `Parser::ParseEagerFunctionBody()`
+#### Parse Phase
+The processing of generator functions and the `yield` keyword is in `parser.cc`. Let's take a look at the AST parsing function: `Parser::ParseEagerFunctionBody()`
 
 ```c++
 3928 ZoneList<Statement*>* Parser::ParseEagerFunctionBody(
@@ -74,30 +71,25 @@ Generator function 和  `yield` 关键字处理是在 `parser.cc`, 我们看到 
 3986    ...
 
 ```
-L3955 判断是否是Generator function。 `ParseStatementList` 解析 function 函数体。
-注意，Generator function 也是一种 function, 在 V8中，同样用 `JSFunction` 表示。
+L3955 determines whether it is a generator function. `ParseStatementList` parses the function body. Note that a generator function is also a function, and in V8, it is also represented by `JSFunction`.
 
-在两个 if 函数体中，创建了 `Yield::kInitial`和 `Yield::kFinal` 两个Yield AST 节点。
+In the two if function bodies, `Yield::kInitial` and `Yield::kFinal` two Yield AST nodes are created.
 
-Yield 状态分为:
+Yield states are:
 
 ```c++
 enum Kind {
     kInitial,  // The initial yield that returns the unboxed generator object.
-    kSuspend,  // A normal yield: { value: EXPRESSION, done: false }
-    kDelegating,  // A yield*.
-    kFinal        // A return: { value: EXPRESSION, done: true }
-  };
 ```
 
-### codegen phase
-机器码生成(x64平台)主要集中在 `runtime-generator.cc`, `full-codegen-x64.cc`。
+### Codegen phase
+The machine code generation (x64 platform) mainly focuses on `runtime-generator.cc` and `full-codegen-x64.cc`.
 
-`runtime-generator.cc` 提供了 `Create`, `Suspend`, `Resume`, `Close`等 stub 代码段，
+`runtime-generator.cc` provides stub code segments such as `Create`, `Suspend`, `Resume`, `Close`, etc.,
 
-给 full-codegen 内联使用，生成汇编代码。
+which are used by full-codegen for inline use to generate assembly code.
 
-我们先来看到 `RUNTIME_FUNCTION(Runtime_CreateJSGeneratorObject)`,
+Let's take a look at `RUNTIME_FUNCTION(Runtime_CreateJSGeneratorObject)`,
 
 ```c++
  14 RUNTIME_FUNCTION(Runtime_CreateJSGeneratorObject) {
@@ -126,11 +118,11 @@ enum Kind {
  37 }
 ```
 
-函数根据当前的 Frame, 创建一个 `JSGeneratorObject`对象来储存  `JSFunction`, `Context` ，pc 指针，
-设置操作数栈为空。
+The function creates a `JSGeneratorObject` object to store `JSFunction`, `Context`, and pc pointer based on the current Frame,
+and sets the operand stack to empty.
 
+After `yield`, the current execution environment is actually saved. L74 saves the current operand stack and saves it to the JSGeneratorObject object.
 
-yield 后，实际上就是保存当前的执行环境，L74保存当前的操作数栈，并保存到JSGeneratorObject对象中。
 ```c++
  40 RUNTIME_FUNCTION(Runtime_SuspendJSGeneratorObject) {
  41   HandleScope handle_scope(isolate);
@@ -176,11 +168,9 @@ yield 后，实际上就是保存当前的执行环境，L74保存当前的操�
 
 ```
 
-Resume  对应于外部的 `next`，要恢复执行，首先我们得知道需要执行的 pc 指针偏移，机器代码存储在
-`JSFunction` 的 `Code` 对象中, L105 拿到 pc 首地址， L106从 `JSGeneratorObject`对象
-取出偏移 offset 。
 
-L108 设置当前 Frame 的 pc 偏移。L118 恢复操作数栈, L126-L130根据恢复的 mode, 返回 value。
+L108 sets the PC offset of the current frame. L118 restores the operand stack, and L126-L130 returns the value based on the restored mode.
+
 
 ```c++
 90 RUNTIME_FUNCTION(Runtime_ResumeJSGeneratorObject) {

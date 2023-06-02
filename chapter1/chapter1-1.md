@@ -1,41 +1,41 @@
-### 为啥是libuv
 
-#### 背景
-node.js最初开始于2009年，是一个可以让Javascript代码离开浏览器的执行环境也可以执行的项目。 node.js使用了Google的V8解析引擎和Marc Lehmann的libev。Node.js将事件驱动的I/O模型与适合该模型的编程语言(Javascript)融合在了一起。随着node.js的日益流行，node.js需要同时支持windows, 但是libev只能在Unix环境下运行。Windows 平台上与kqueue(FreeBSD)或者(e)poll(Linux)等内核事件通知相应的机制是IOCP。libuv提供了一个跨平台的抽象，由平台决定使用libev或IOCP。在node-v0.9.0版本中，libuv移除了libev的内容。
+## Why libuv
 
+#### Background
+Node.js started in 2009 as a project that allowed JavaScript code to be executed outside of the browser. Node.js uses Google's V8 parsing engine and Marc Lehmann's libev. Node.js combines the event-driven I/O model with a programming language (JavaScript) that is suitable for this model. As node.js became increasingly popular, it needed to support Windows as well, but libev could only run on Unix environments. The mechanism corresponding to kernel event notification on the Windows platform is IOCP, which is based on kqueue (FreeBSD) or (e)poll (Linux). Libuv provides a cross-platform abstraction that allows the platform to determine whether to use libev or IOCP. In version node-v0.9.0, libuv removed the content of libev.
 
-#### 为啥是异步
+#### Why asynchronous
 
-我们先看一张表：
+Let's take a look at a table:
 
-| 分类 | 操作 | 时间成本 |
+| Category | Operation | Time cost |
 | --- | --- | ---   |
-| 缓存 | L1缓存 | 1纳秒 |
-|     | L2缓存 | 4纳秒 |
-|     | 主存储器 | 100 ns |
-|     | SSD 随机读取 | 16000 ns |
-| I/O | 往返在同一数据中心 | 500000 ns |
-|     | 物理磁盘寻道 | 4,000,000 ns |
+| Cache | L1 cache | 1 nanosecond |
+|     | L2 cache | 4 nanoseconds |
+|     | Main memory | 100 ns |
+|     | SSD random read | 16,000 ns |
+| I/O | Round trip in the same data center | 500,000 ns |
+|     | Physical disk seek | 4,000,000 ns |
 
-我们看到即便是 SSD 的访问相较于高速的 CPU，仍然是慢速设备。于是基于事件驱动的 IO 模型就应运而生，解决了高速设备同步等待慢速设备或访问的问题。这不是 libuv 的独创，linux kernel 原生支持的 NIO也是这个思路。 但 libuv 统一了网络访问，文件访问，做到了跨平台。
+We can see that even SSD access is still a slow device compared to high-speed CPUs. Therefore, the event-driven IO model was born to solve the problem of synchronous waiting for slow devices or access by high-speed devices. This is not unique to libuv, and NIO natively supported by the Linux kernel is also based on this idea. However, libuv unifies network access, file access, and achieves cross-platform.
 
-
-### libuv 架构
+### libuv architecture
 ![](FuX1qcGJgwYtX9zNbBAOSaQeD8Qz.png)
-从左往右分为两部分，一部分是与网络I/O相关的请求，而另外一部分是由文件I/O, DNS Ops以及User code组成的请求。
+From left to right, it is divided into two parts, one is related to network I/O requests, and the other is composed of file I/O, DNS Ops, and User code requests.
 
-从图中可以看出，对于Network I/O和以File I/O为代表的另一类请求，异步处理的底层支撑机制是完全不一样的。
+From the figure, it can be seen that the underlying support mechanism for asynchronous processing is completely different for network I/O-related requests and another type of requests represented by File I/O.
 
-对于Network I/O相关的请求， 根据OS平台不同，分别使用Linux上的epoll，OSX和BSD类OS上的kqueue，SunOS上的event ports以及Windows上的IOCP机制。
+For network I/O-related requests, depending on the OS platform, epoll on Linux, kqueue on OSX and BSD-like OS, event ports on SunOS, and IOCP mechanisms on Windows are used.
+
+For requests represented by File I/O, thread pool is used. The asynchronous request processing is implemented using the thread pool method, which can be well supported on various OSs.
+
+I once suggested to the libuv community to replace the thread pool with native NIO on the Linux platform and implemented it [2]. The test found a 3% improvement. Considering the dependence of NIO on the kernel version, the asynchronous request processing is implemented using the thread pool method, which can be well supported on various OSs, which I believe is the result of the libuv author's careful consideration.
+
+In the later detailed module source code analysis, they will be analyzed one by one.
+
+### Reference
+
+- 1. http://luohaha.github.io/Chinese-uvbook/
+- 2. https://github.com/libuv/libuv/issues/461
 
 
-而对于File I/O为代表的请求，则使用thread pool。利用thread pool的方式实现异步请求处理，在各类OS上都能获得很好的支持。
-
-笔者曾经给 libuv 社区提出过linux 平台下用原生的NIO替换 thread pool 的建议并实现[2],测试发现有3%的提升. 考虑到 NIO 对内核版本的依赖，利用thread pool的方式实现异步请求处理，在各类OS上都能获得很好的支持，相信是 libuv 作者权衡再三的结果。
-
-后面详细的模块源码分析时，陆续的会一一剖析。
-
-### 参考
-
-- [1]. http://luohaha.github.io/Chinese-uvbook/
-- [2]. https://github.com/libuv/libuv/issues/461
