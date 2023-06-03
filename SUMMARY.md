@@ -6,7 +6,7 @@
   * [Why libuv?](chapter1/chapter1-1.md)
   * [V8 concepts](chapter2/chapter2-0.md)
   * [C++ and JS interaction](chapter2/chapter2-1.md)
-* [Starting with "hello world"] (chapter1/chapter1-2.md)
+* [Starting with hello world](chapter1/chapter1-2.md)
 * [Module loading](chapter2/chapter2-2.md)
 * [Global object](chapter12/chapter12-1.md)
 * [Event loop](chapter5/chapter5-1.md)
