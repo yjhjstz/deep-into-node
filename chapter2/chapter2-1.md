@@ -3,7 +3,7 @@
 
 
 ### 数据及模板
-由于 C++ 原生数据类型与 JavaScript 中数据类型有很大差异，因此 V8 提供了 Value 类，从 JavaScript 到 C++，从 C++ 到 JavaScrpt 都会用到这个类及其子类，比如：
+由于 C++ 原生数据类型与 JavaScript 中数据类型有很大差异，因此 V8 提供了 Value 类，从 JavaScript 到 C++，从 C++ 到 JavaScript 都会用到这个类及其子类，比如：
 ```c++
 Handle<Value> Add(const Arguments& args){
    int a = args[0]->Uint32Value(); 
