@@ -6,8 +6,8 @@ Linux native aio 有两种API，一种是libaio提供的API，一种是利用系
 
 - io_setup : 是用来设置一个异步请求的上下文，第一个参数是请求事件的个数，第二个参数唯一标识一个异步请求。
 - io_commit: 是用来提交一个异步io请求的，在提交之前，需要设置一下结构体`iocb`。
-- io_getevents: 用来获取完成的io事件，参数`min_nr`是事件个数的的最小值，`nr`是事件个数的最大值，如果没有足够的事件发生，该函数会阻塞。
-- io_destroy：在所有时间处理完之后，调用此函数销毁异步io请求。
+- io_getevents: 用来获取完成的io事件，参数`min_nr`是事件个数的最小值，`nr`是事件个数的最大值，如果没有足够的事件发生，该函数会阻塞。
+- io_destroy：在所有事件处理完之后，调用此函数销毁异步io请求。
 
 #### 限制
 aio只能使用于常规的文件IO，不能使用于socket，管道等IO，但对于 libuv 的 fs 模块使用需求已经足够了。
@@ -99,3 +99,7 @@ node.js 异步 IO 的脉络已经清晰，我们清楚的看到这样的一个 T
 * 支持任务优先级。
 
 ### 参考
+* [GitHub Issue #28 关于 libuv 在 Linux 上 AIO 实现的讨论](citehttps://github.com/libuv/libuv/issues/28)  
+* [GitHub Issue #461 对 native AIO 实现稳定性的讨论](citehttps://github.com/libuv/libuv/issues/461)  
+* [基于 libuv 的 native AIO 实现提交记录](citehttps://github.com/yjhjstz/libuv/commit/2748728635c4f74d6f27524fd36e680a88e4f04a)  
+* [简书文章《什么是 SSL？》及相关加密技术讨论](citehttp://www.jianshu.com/p/a8b87e436ac7)
