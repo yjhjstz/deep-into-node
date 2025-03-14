@@ -98,4 +98,7 @@ exports.sex = "male";
 
 ### 参考
 
+*https://nodejs.org/api/globals.html
+*https://nodejs.org/api/modules.html
+*https://medium.com/geekculture/understanding-the-difference-between-module-exports-and-exports-in-node-js-264fc500a409
 
