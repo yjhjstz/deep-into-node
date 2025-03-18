@@ -200,5 +200,8 @@ function parserOnIncomingClient(res, shouldKeepAlive) {
 
 
 ### 参考
+*https://nodejs.org/api/http.html
+*https://github.com/nodejs/node/blob/master/lib/_http_client.js
+*https://github.com/nodejs/http-parser
 
 
